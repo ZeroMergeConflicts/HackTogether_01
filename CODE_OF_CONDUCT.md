@@ -1,4 +1,4 @@
-# HackTogether_01: Code of Conduct
+# Code of Conduct
 
 ***This code of conduct outlines expectations for participation in [HackTogether_01](https://github.com/ZeroMergeConflicts/HackTogether_01) community, as well as steps for reporting unacceptable behavior. We are committed to providing a welcoming and inspiring community for all. People violating this code of conduct may be banned from the community.***
 
