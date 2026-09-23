@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 
 
@@ -14,3 +15,14 @@ class FolderScanner:
             raise NotADirectoryError(f"Not a directory: {self.folder_path}")
 
         return [file for file in self.folder_path.rglob("*") if file.is_file()]
+
+    def get_file_hash(self, file_path: Path) -> str:
+
+        sha256 = hashlib.sha256()
+
+        with file_path.open("rb") as file:
+            while chunk := file.read(8192):
+                sha256.update(chunk)
+
+        return sha256.hexdigest()
+
