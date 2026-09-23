@@ -26,3 +26,14 @@ class FolderScanner:
 
         return sha256.hexdigest()
 
+    def get_file_metadata(self, file_path: Path) -> dict:
+
+        stat = file_path.stat()
+
+        return {
+            "name": file_path.name,
+            "path": str(file_path.resolve()),
+            "extension": file_path.suffix.lower(),
+            "size": stat.st_size,
+            "modified_at": stat.st_mtime,
+        }
