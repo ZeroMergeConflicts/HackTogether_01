@@ -14,6 +14,7 @@ const state = {
   health: { status: "ok", ai_configured: false, model: "gemini-2.5-flash" },
   scanStatus: { status: "idle", total: 0, processed: 0, failed: 0 },
   activeHeroDemo: "symposium",
+  activeJourneyStep: "sources",
   chatHistory: [
     {
       role: "assistant",
@@ -27,6 +28,7 @@ const state = {
   previewCache: new Map(),
   graphNodes: [],
   graphEdges: [],
+  hoveredGraphNode: null,
   physicsEnabled: true,
   draggedNode: null,
 };
@@ -85,6 +87,30 @@ const HERO_DEMOS = {
     ],
   },
 };
+
+const ANSWER_JOURNEY_STEPS = [
+  {
+    id: "sources",
+    kicker: "STEP 01 / SOURCE FILES",
+    title: "Start with the original files.",
+    description: "Every useful detail stays attached to the document it came from.",
+    nextLabel: "Connect the signals",
+  },
+  {
+    id: "connections",
+    kicker: "STEP 02 / CROSS-FILE LINKS",
+    title: "Bring related facts together.",
+    description: "Dates, actions, and amounts become useful when their sources are connected.",
+    nextLabel: "See the grounded answer",
+  },
+  {
+    id: "answer",
+    kicker: "STEP 03 / VERIFIED RESPONSE",
+    title: "Keep the evidence beside the answer.",
+    description: "Open a cited source whenever you want to check the detail for yourself.",
+    nextLabel: "Restart the answer trail",
+  },
+];
 
 const elements = {
   folderPath: document.getElementById("folderPath"),
@@ -193,6 +219,138 @@ function renderFileChip(fileId, filename) {
   `;
 }
 
+function renderAnswerJourney(demo) {
+  const journey = document.getElementById("answerJourney");
+  if (!journey) return;
+
+  const stepIndex = Math.max(
+    0,
+    ANSWER_JOURNEY_STEPS.findIndex((step) => step.id === state.activeJourneyStep),
+  );
+  const step = ANSWER_JOURNEY_STEPS[stepIndex];
+  const visual = document.getElementById("journeyVisual");
+  const demoNames = {
+    symposium: "Symposium",
+    payment: "Payment",
+    exam: "Exam schedule",
+  };
+
+  journey.dataset.stage = step.id;
+  document.getElementById("journeyStageKicker").textContent = step.kicker;
+  document.getElementById("journeyStageTitle").textContent = step.title;
+  document.getElementById("journeyStageDescription").textContent = step.description;
+  document.getElementById("journeyNextLabel").textContent = step.nextLabel;
+  document.getElementById("journeyDemoContext").textContent =
+    `${demoNames[state.activeHeroDemo] || "Live"} demo · ${demo.sources.length} source ${demo.sources.length === 1 ? "file" : "files"}`;
+
+  document.querySelectorAll("[data-journey-step]").forEach((button) => {
+    const active = button.dataset.journeyStep === step.id;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+
+  const sourceRows = demo.sources
+    .map((source, index) => `
+      <div class="journey-source-row" style="--source-order: ${index};">
+        <span class="journey-source-index">0${index + 1}</span>
+        <i data-lucide="${iconForExtension(source.filename)}" class="icon-sm" aria-hidden="true"></i>
+        <div class="journey-source-copy">
+          <strong>${escapeHtml(source.filename)}</strong>
+          <span>${escapeHtml(source.desc)}</span>
+        </div>
+      </div>
+    `)
+    .join("");
+
+  if (step.id === "sources") {
+    visual.innerHTML = `
+      <div class="journey-source-list">${sourceRows}</div>
+      <div class="journey-visual-footnote">
+        <i data-lucide="shield-check" class="icon-sm" aria-hidden="true"></i>
+        <span>Original files remain one click away.</span>
+      </div>
+    `;
+  } else if (step.id === "connections") {
+    visual.innerHTML = `
+      <div class="journey-link-map">
+        <div class="journey-connected-files">
+          ${demo.sources
+            .map((source) => `
+              <div class="journey-connected-file">
+                <i data-lucide="${iconForExtension(source.filename)}" class="icon-sm" aria-hidden="true"></i>
+                <span>${escapeHtml(source.filename)}</span>
+              </div>
+            `)
+            .join("")}
+        </div>
+        <div class="journey-link-beam" aria-hidden="true"><span></span></div>
+        <div class="journey-synthesis-node">
+          <span class="journey-synthesis-icon"><i data-lucide="sparkles" class="icon-md" aria-hidden="true"></i></span>
+          <span class="mono-label">CONTEXT SYNTHESIS</span>
+          <strong>${demo.sources.length} connected ${demo.sources.length === 1 ? "source" : "sources"}</strong>
+          <span>Facts stay linked to their origin.</span>
+        </div>
+      </div>
+      <div class="journey-visual-footnote">
+        <i data-lucide="git-branch" class="icon-sm" aria-hidden="true"></i>
+        <span>${escapeHtml(demo.query)}</span>
+      </div>
+    `;
+  } else {
+    visual.innerHTML = `
+      <div class="journey-answer-card">
+        <div class="journey-answer-heading">
+          <span><i data-lucide="badge-check" class="icon-sm" aria-hidden="true"></i> GROUNDED RESPONSE</span>
+          <span class="journey-confidence"><i data-lucide="shield-check" class="icon-xs" aria-hidden="true"></i> SOURCE-LINKED</span>
+        </div>
+        <p>${escapeHtml(demo.answer)}</p>
+        <div class="journey-citations">
+          <span class="mono-label">CHECK THE SOURCES</span>
+          ${demo.sources.map((source) => renderFileChip(null, source.filename)).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  const progress = document.querySelector(".journey-progress");
+  progress.setAttribute("aria-valuenow", String(stepIndex + 1));
+  document.getElementById("journeyProgressFill").style.width = `${((stepIndex + 1) / ANSWER_JOURNEY_STEPS.length) * 100}%`;
+  refreshIcons();
+}
+
+function initializeLandingMotion() {
+  if (
+    !("IntersectionObserver" in window) ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    return;
+  }
+
+  const targets = document.querySelectorAll(
+    ".answer-journey-section .journey-header, .section-title-block, .comparison-grid > *, .product-bento-grid > *, .pipeline-steps-grid > *, .module-launcher-grid > *, .landing-footer .footer-inner",
+  );
+  const groupOrder = new Map();
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    },
+    { rootMargin: "0px 0px -6% 0px", threshold: 0.12 },
+  );
+
+  targets.forEach((target) => {
+    const group = target.parentElement;
+    const order = groupOrder.get(group) || 0;
+    groupOrder.set(group, order + 1);
+    target.style.setProperty("--motion-delay", `${Math.min(order, 5) * 65}ms`);
+    target.classList.add("scroll-reveal");
+    observer.observe(target);
+  });
+}
+
 /* =====================================================================
    MODULE 3: DUAL-SHELL ROUTER (LANDING <-> WORKSPACE)
    ===================================================================== */
@@ -244,6 +402,12 @@ window.addEventListener("hashchange", () => {
    ===================================================================== */
 function renderLandingHero() {
   const demo = HERO_DEMOS[state.activeHeroDemo] || HERO_DEMOS.symposium;
+  const showcaseBody = document.querySelector(".showcase-body");
+  if (showcaseBody) {
+    showcaseBody.classList.remove("showcase-content-enter");
+    void showcaseBody.offsetWidth;
+    showcaseBody.classList.add("showcase-content-enter");
+  }
 
   const hFiles = document.getElementById("heroStatFiles");
   const hCtx = document.getElementById("heroStatContext");
@@ -311,6 +475,7 @@ function renderLandingHero() {
       .join("");
   }
 
+  renderAnswerJourney(demo);
   refreshIcons();
 }
 
@@ -598,6 +763,58 @@ function renderContextExplorer() {
 
 function renderActionMatrixAndRadar() {
   const agg = getAggregatedVaultStats();
+  const focus =
+    agg.pendingActions.find(
+      (item) =>
+        /\b(?:need(?:s)? to|must|should|submit|pay|send|finalize|not finalized|not completed)\b/i.test(item.text) &&
+        !/^payment (?:status|date):/i.test(item.text.trim()),
+    ) || agg.deadlines[0] || null;
+  const isAction = Boolean(focus && agg.pendingActions.includes(focus));
+  const hasItemsToReview = agg.pendingActions.length > 0 || agg.deadlines.length > 0;
+  const focusCard = document.getElementById("dashboardFocusCard");
+  if (focusCard) {
+    const priority = focus
+      ? isAction
+        ? "action"
+        : "deadline"
+      : hasItemsToReview
+        ? "review"
+        : "clear";
+    focusCard.dataset.priority = priority;
+    document.getElementById("dashboardFocusLabel").textContent =
+      priority === "action"
+        ? "NEXT PRIORITY"
+        : priority === "deadline"
+          ? "UPCOMING DEADLINE"
+          : priority === "review"
+            ? "REVIEW EXTRACTED ITEMS"
+            : "VAULT STATUS";
+    document.getElementById("dashboardFocusText").textContent = focus
+      ? focus.text.replace(/^[-*]\s*/, "")
+      : hasItemsToReview
+        ? `${agg.pendingActions.length + agg.deadlines.length} extracted ${agg.pendingActions.length + agg.deadlines.length === 1 ? "item is" : "items are"} ready for review.`
+        : state.files.length
+          ? "No open actions surfaced. Your vault is looking clear."
+          : "Scan a folder to build your first connected overview.";
+    document.getElementById("dashboardFocusSource").innerHTML = focus
+      ? renderFileChip(focus.fileId, focus.filename)
+      : "";
+    document.getElementById("dashboardFocusIcon").setAttribute(
+      "data-lucide",
+      priority === "deadline"
+        ? "calendar-clock"
+        : priority === "clear"
+          ? "circle-check"
+          : priority === "review"
+            ? "list-checks"
+            : "zap",
+    );
+    const focusButton = document.getElementById("dashboardFocusButton");
+    focusButton.dataset.navTarget = hasItemsToReview ? "actions" : "files";
+    focusButton.querySelector("span").textContent = hasItemsToReview
+      ? "Review action board"
+      : "View vault files";
+  }
 
   const radar = document.getElementById("dashboardActionFeed");
   if (radar) {
@@ -1099,6 +1316,7 @@ function buildGraphTopology() {
         y: 180 + Math.sin(angle) * radius,
         vx: 0,
         vy: 0,
+        hoverProgress: 0,
       };
       nodes.push(node);
       nodeMap.set(id, node);
@@ -1114,7 +1332,7 @@ function buildGraphTopology() {
     const src = `file_${rel.source_id}`;
     const tgt = `file_${rel.target_id}`;
     if (nodeMap.has(src) && nodeMap.has(tgt)) {
-      edges.push({ source: src, target: tgt });
+      edges.push({ source: src, target: tgt, type: "relationship" });
     }
   });
 
@@ -1132,7 +1350,7 @@ function buildGraphTopology() {
             if (!clean || clean.startsWith("Document:")) return;
             const id = `ev_${clean.toLowerCase()}`;
             addNode(id, clean, "event", ctx.file_id, ctx.filename);
-            edges.push({ source: fileNodeId, target: id });
+            edges.push({ source: fileNodeId, target: id, type: "event" });
           });
       }
 
@@ -1142,7 +1360,7 @@ function buildGraphTopology() {
           if (!clean || clean.toLowerCase().startsWith("review ")) return;
           const id = `act_${clean.toLowerCase()}`;
           addNode(id, clean, "action", ctx.file_id, ctx.filename);
-          edges.push({ source: fileNodeId, target: id });
+          edges.push({ source: fileNodeId, target: id, type: "action" });
         });
       }
     });
@@ -1150,6 +1368,7 @@ function buildGraphTopology() {
 
   state.graphNodes = nodes;
   state.graphEdges = edges;
+  state.hoveredGraphNode = null;
   const hud = document.getElementById("graphHudStats");
   if (hud) hud.textContent = `${nodes.length} Nodes · ${edges.length} Edges`;
 }
@@ -1164,7 +1383,7 @@ function stepAndDrawGraph(canvas) {
   const nodes = state.graphNodes;
   const edges = state.graphEdges;
   if (!nodes.length) {
-    ctx.fillStyle = "#646d85";
+    ctx.fillStyle = "#536762";
     ctx.font = "13px 'Plus Jakarta Sans', sans-serif";
     ctx.fillText("Scan a folder to visualize context relationships.", 24, height / 2);
     return;
@@ -1217,35 +1436,87 @@ function stepAndDrawGraph(canvas) {
     }
   }
 
+  for (const node of nodes) {
+    const targetProgress = state.hoveredGraphNode === node.id ? 1 : 0;
+    node.hoverProgress += (targetProgress - node.hoverProgress) * 0.18;
+  }
+
+  const edgeColors = {
+    relationship: "rgba(83, 102, 173, 0.56)",
+    event: "rgba(8, 126, 155, 0.52)",
+    action: "rgba(152, 96, 10, 0.5)",
+  };
   ctx.lineWidth = 1.2;
+  ctx.lineCap = "round";
   for (const edge of edges) {
     const a = nodes.find((n) => n.id === edge.source);
     const b = nodes.find((n) => n.id === edge.target);
     if (!a || !b) continue;
-    ctx.strokeStyle = "rgba(99, 102, 241, 0.28)";
+    const edgeFocus = Math.max(a.hoverProgress, b.hoverProgress);
+    ctx.globalAlpha = state.hoveredGraphNode ? 0.16 + edgeFocus * 0.84 : 1;
+    ctx.strokeStyle = edgeColors[edge.type] || edgeColors.relationship;
+    ctx.lineWidth = 1 + edgeFocus * 1.1;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for (const node of nodes) {
+    const color =
+      node.type === "file"
+        ? "#0f766e"
+        : node.type === "event"
+          ? "#087e9b"
+          : "#a86104";
+    const radius = (node.type === "file" ? 9 : 6) + node.hoverProgress * 1.5;
+
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 3 + node.hoverProgress * 9;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "#ffffff";
     ctx.stroke();
   }
 
   for (const node of nodes) {
     const color =
       node.type === "file"
-        ? "#6366f1"
+        ? "#0f766e"
         : node.type === "event"
-          ? "#06b6d4"
-          : "#f59e0b";
-    const radius = node.type === "file" ? 9 : 6;
+          ? "#087e9b"
+          : "#a86104";
+    const radius = (node.type === "file" ? 9 : 6) + node.hoverProgress * 1.5;
+    const isHovered = state.hoveredGraphNode === node.id;
+    const labelX = node.x + radius + 7;
+    const labelY = node.y + 4;
 
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
-
-    ctx.fillStyle = "#e2e8f0";
-    ctx.font = "500 11px 'JetBrains Mono', monospace";
-    ctx.fillText(node.label, node.x + 12, node.y + 4);
+    ctx.font = `${isHovered ? 700 : 600} ${14 + Math.round(node.hoverProgress)}px 'JetBrains Mono', monospace`;
+    ctx.textBaseline = "middle";
+    if (node.hoverProgress > 0.08) {
+      const labelWidth = ctx.measureText(node.label).width;
+      ctx.beginPath();
+      ctx.roundRect(labelX - 5, labelY - 10, labelWidth + 10, 20, 5);
+      ctx.globalAlpha = node.hoverProgress;
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.lineWidth = 5;
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.98)";
+      ctx.strokeText(node.label, labelX, labelY);
+    }
+    ctx.fillStyle = isHovered ? "#123f39" : "#173b36";
+    ctx.fillText(node.label, labelX, labelY);
   }
 }
 
@@ -1277,6 +1548,8 @@ function attachCanvasInteractivity(canvas) {
       state.draggedNode.y = my;
       return;
     }
+    state.hoveredGraphNode = node?.id || null;
+    canvas.style.cursor = node ? "pointer" : "grab";
     if (node && node.fileId) {
       showHoverPreview(
         { dataset: { fileId: node.fileId, filename: node.filename } },
@@ -1286,6 +1559,12 @@ function attachCanvasInteractivity(canvas) {
     } else {
       hideHoverPreview();
     }
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    state.hoveredGraphNode = null;
+    if (!state.draggedNode) canvas.style.cursor = "grab";
+    hideHoverPreview();
   });
 
   window.addEventListener("mouseup", () => {
@@ -1447,6 +1726,24 @@ document.addEventListener("mouseout", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const journeyStep = event.target.closest("[data-journey-step]");
+  if (journeyStep) {
+    state.activeJourneyStep = journeyStep.dataset.journeyStep;
+    renderAnswerJourney(HERO_DEMOS[state.activeHeroDemo]);
+    return;
+  }
+
+  const nextJourneyStep = event.target.closest("#journeyNextStep");
+  if (nextJourneyStep) {
+    const currentIndex = ANSWER_JOURNEY_STEPS.findIndex(
+      (step) => step.id === state.activeJourneyStep,
+    );
+    const nextIndex = (currentIndex + 1) % ANSWER_JOURNEY_STEPS.length;
+    state.activeJourneyStep = ANSWER_JOURNEY_STEPS[nextIndex].id;
+    renderAnswerJourney(HERO_DEMOS[state.activeHeroDemo]);
+    return;
+  }
+
   const demoTab = event.target.closest("[data-demo]");
   if (demoTab) {
     document.querySelectorAll(".win-tab").forEach((b) => b.classList.remove("active"));
@@ -1572,6 +1869,7 @@ const initialHash = window.location.hash.replace(/^#\/?/, "");
 navigateTo(VIEW_META[initialHash] ? initialHash : "welcome");
 renderChatStream();
 renderLandingHero();
+initializeLandingMotion();
 startGraphLoop();
 refreshIcons();
 fetchDashboard().catch((error) => {

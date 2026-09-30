@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 from datetime import datetime
 import json
+import math
 import operator
 import re
 from typing import Any
@@ -32,6 +33,10 @@ The answer must be:
 - Grounded in the provided context when answering personal questions
 - Honest about uncertainty
 - Written for a human, not a database
+- Use retrieved file context as the only evidence for personal facts. Conversation history is for continuity only, never proof.
+- If retrieved context is missing or does not support a personal claim, say what is unknown. Never fill gaps with general knowledge or invented details.
+- Cite every file that materially supports the answer, and cite only file IDs present in RETRIEVED CONTEXT.
+- Treat confidence as calibrated uncertainty: lower it when evidence is partial, conflicting, or indirect.
 
 Never simply repeat the retrieved context.
 Never answer with a list of filenames unless the user explicitly asks for files/documents.
@@ -499,7 +504,9 @@ class QueryService:
                         self._record_history(question, answer, intent)
                         return {
                             "answer": answer,
-                            "confidence": float(result.get("confidence", 0.95)),
+                            "confidence": self._normalize_confidence(
+                                result.get("confidence"), default=0.5
+                            ),
                             "has_sufficient_context": True,
                             "sources": [],
                         }
@@ -516,6 +523,11 @@ class QueryService:
             }
 
         relevant_context = self.search_context(question)
+        if intent in {"personal", "mixed"} and not relevant_context:
+            fallback = self._synthesize_fallback(question, [], intent=intent)
+            self._record_history(question, fallback["answer"], intent)
+            return fallback
+
         context_prompt = self.build_context(question, relevant_context)
 
         if self.ai_client.is_configured():
@@ -546,22 +558,53 @@ class QueryService:
                 )
                 answer = str(result.get("answer") or "").strip()
                 if answer:
-                    used_ids = set(result.get("relevant_file_ids") or [])
-                    sources = [
-                        {
-                            "file_id": int(ctx["file_id"]),
-                            "filename": str(ctx.get("filename") or "unknown"),
-                        }
-                        for ctx in relevant_context
-                        if ctx.get("file_id") in used_ids
-                    ]
+                    raw_ids = result.get("relevant_file_ids") or []
+                    if not isinstance(raw_ids, list):
+                        raw_ids = []
+                    used_ids: set[int] = set()
+                    for source_id in raw_ids:
+                        if isinstance(source_id, bool):
+                            continue
+                        try:
+                            used_ids.add(int(source_id))
+                        except (TypeError, ValueError):
+                            continue
+
+                    sources = []
+                    for context in relevant_context:
+                        try:
+                            file_id = int(context["file_id"])
+                        except (KeyError, TypeError, ValueError):
+                            continue
+                        if file_id in used_ids:
+                            sources.append(
+                                {
+                                    "file_id": file_id,
+                                    "filename": str(context.get("filename") or "unknown"),
+                                }
+                            )
+
+                    if intent in {"personal", "mixed"} and not sources:
+                        fallback = self._synthesize_fallback(
+                            question, relevant_context, intent=intent
+                        )
+                        self._record_history(question, fallback["answer"], intent)
+                        return fallback
+
+                    has_sufficient_context = (
+                        result.get("has_sufficient_context") is True and bool(sources)
+                    )
+                    confidence = self._normalize_confidence(
+                        result.get("confidence"), default=0.5
+                    )
+                    if not has_sufficient_context:
+                        confidence = min(confidence, 0.49)
+
                     self._record_history(question, answer, intent)
                     return {
                         "answer": answer,
-                        "confidence": float(result.get("confidence", 0.94)),
-                        "has_sufficient_context": bool(
-                            result.get("has_sufficient_context", True)
-                        ),
+                        "confidence": confidence,
+                        "has_sufficient_context": has_sufficient_context,
                         "sources": sources,
                     }
             except Exception:
@@ -572,6 +615,18 @@ class QueryService:
         )
         self._record_history(question, fallback["answer"], intent)
         return fallback
+
+    @staticmethod
+    def _normalize_confidence(value: Any, default: float) -> float:
+        if isinstance(value, bool):
+            return default
+        try:
+            confidence = float(value)
+        except (TypeError, ValueError):
+            return default
+        if not math.isfinite(confidence):
+            return default
+        return min(1.0, max(0.0, confidence))
 
     def _record_history(
         self,
