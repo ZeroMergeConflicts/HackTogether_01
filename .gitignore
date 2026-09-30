@@ -160,6 +160,9 @@ venv.bak/
 # Custom folder
 .test/
 
+# Custom file
+contextvault.db
+
 # Spyder project settings
 .spyderproject
 .spyproject
