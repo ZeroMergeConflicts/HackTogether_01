@@ -37,9 +37,10 @@ Never simply repeat the retrieved context.
 Never answer with a list of filenames unless the user explicitly asks for files/documents.
 
 Critical Rules for Personal Context Reasoning:
-- Cross-Document Reasoning: Combine facts across different files (e.g., notice + payment receipt + team notes + WhatsApp reminder). Do not respond with separate document summaries.
+- STRICT TOPIC ISOLATION: If the user's question is about a specific project, event, or entity (e.g., "math", "Tech Symposium"), strictly answer ONLY about that topic. Do not include deadlines, actions, or payments from unrelated contexts.
+- Cross-Document Reasoning: Combine facts across different files if they belong to the same topic.
 - Semantic Deduplication: If two files state the same deadline or requirement in different words, merge them into one clean statement.
-- Relevance Filtering: Ignore irrelevant retrieved documents (e.g., math.txt when asked about the symposium). Never mention irrelevant documents.
+- Relevance Filtering: Ignore irrelevant retrieved documents. Never mention irrelevant documents.
 - Action-State Reasoning: Distinguish Completed vs. Pending tasks. Note that "needs to be paid if you haven't already" means payment is PENDING/UNKNOWN unless a payment receipt confirms completion.
 - Response Style: Avoid robotic meta-phrases like "The relevant context suggests..." or "You need to: Participants must...". Write clean, grammatical sentences.
 - Output Separation: Do not put filenames inside `answer` unless directly asked. List only the `relevant_file_ids` that were genuinely used to answer the question.
@@ -53,11 +54,38 @@ STOPWORDS = {
     "have", "hello", "help", "hey", "hi", "how", "i", "in", "important", "is",
     "it", "left", "me", "minus", "multiply", "my", "need", "next", "now", "of",
     "on", "or", "our", "pending", "please", "plus", "remaining", "should", "so",
-    "status", "still", "summarize", "summary", "tell", "that", "the", "their",
-    "there", "these", "they", "thing", "things", "this", "times", "to", "today",
-    "tonight", "up", "us", "was", "we", "what", "whats", "when", "where",
-    "which", "who", "why", "will", "with", "work", "working", "would", "you",
-    "your",
+    "status", "still", "summarize", "summary", "task", "tasks", "tell", "that",
+    "the", "their", "there", "these", "they", "thing", "things", "this", "times",
+    "to", "today", "todo", "tonight", "up", "us", "was", "we", "what", "whats",
+    "when", "where", "which", "who", "why", "will", "with", "work", "working",
+    "would", "you", "your",
+}
+
+MONTH_ALIASES: dict[str, tuple[str, ...]] = {
+    "jan": ("jan", "january"),
+    "january": ("jan", "january"),
+    "feb": ("feb", "february"),
+    "february": ("feb", "february"),
+    "mar": ("mar", "march"),
+    "march": ("mar", "march"),
+    "apr": ("apr", "april"),
+    "april": ("apr", "april"),
+    "may": ("may",),
+    "jun": ("jun", "june"),
+    "june": ("jun", "june"),
+    "jul": ("jul", "july"),
+    "july": ("jul", "july"),
+    "aug": ("aug", "august"),
+    "august": ("aug", "august"),
+    "sep": ("sep", "sept", "september"),
+    "sept": ("sep", "sept", "september"),
+    "september": ("sep", "sept", "september"),
+    "oct": ("oct", "october"),
+    "october": ("oct", "october"),
+    "nov": ("nov", "november"),
+    "november": ("nov", "november"),
+    "dec": ("dec", "december"),
+    "december": ("dec", "december"),
 }
 
 GREETINGS = {
@@ -171,11 +199,23 @@ class QueryService:
         if not all_contexts:
             return []
 
-        specific_terms = [
-            t
-            for t in self._tokenize(question)
-            if t not in STOPWORDS and not t.isdigit() and len(t) >= 2
-        ]
+        raw_tokens = self._tokenize(question)
+        has_month_or_date = any(t in MONTH_ALIASES for t in raw_tokens) or any(
+            w in question.lower() for w in ("by ", "before ", "on ", "deadline", "date")
+        )
+
+        specific_terms: list[str] = []
+        for token in raw_tokens:
+            if token in STOPWORDS:
+                continue
+            if token.isdigit():
+                if has_month_or_date and (
+                    (1 <= int(token) <= 31) or (2020 <= int(token) <= 2035)
+                ):
+                    specific_terms.append(token)
+                continue
+            if len(token) >= 2:
+                specific_terms.append(token)
 
         if not specific_terms and self.history:
             personal_turns = [
@@ -194,10 +234,69 @@ class QueryService:
                 ]
 
         scored = self._score_contexts(specific_terms, all_contexts)
+
+        is_task_or_deadline_query = any(
+            kw in question.lower()
+            for kw in (
+                "need to", "still need", "complete", "finish", "todo",
+                "pending", "deadline", "deadlines", "what do i",
+            )
+        )
+
         if scored:
-            return [context for _, context in scored[:8]]
+            results = [context for _, context in scored[:8]]
+            
+            # --- STRICT TOPIC ISOLATION FILTER ---
+            # If the user's question explicitly names a known event or entity,
+            # discard any retrieved contexts that do not relate to that specific topic.
+            question_lower = question.lower()
+            target_topics = set()
+            for ctx in results:
+                data = ctx.get("data") or {}
+                for ev in (data.get("events", []) + data.get("entities", [])):
+                    ev_str = str(ev).lower().strip()
+                    # Only match meaningful multi-character entities
+                    if len(ev_str) > 3 and ev_str in question_lower:
+                        target_topics.add(ev_str)
+
+            if target_topics:
+                isolated_results = []
+                for ctx in results:
+                    data = ctx.get("data") or {}
+                    ctx_haystack = " ".join([
+                        str(ctx.get("filename", "")).lower(),
+                        str(ctx.get("summary", "")).lower(),
+                        json.dumps(data, ensure_ascii=False).lower()
+                    ])
+                    # If this document mentions ANY of the targets found in the question, keep it.
+                    if any(topic in ctx_haystack for topic in target_topics):
+                        isolated_results.append(ctx)
+                
+                if isolated_results:
+                    results = isolated_results
+            # -------------------------------------
+
+            if is_task_or_deadline_query:
+                action_bearing = [
+                    ctx
+                    for ctx in results
+                    if (ctx.get("data") or {}).get("actions")
+                    or (ctx.get("data") or {}).get("deadlines")
+                ]
+                if action_bearing:
+                    return action_bearing
+            return results
 
         if self._is_broad_personal_query(question):
+            if is_task_or_deadline_query:
+                action_bearing = [
+                    ctx
+                    for ctx in all_contexts
+                    if (ctx.get("data") or {}).get("actions")
+                    or (ctx.get("data") or {}).get("deadlines")
+                ]
+                if action_bearing:
+                    return action_bearing[:8]
             return all_contexts[:8]
 
         return []
@@ -206,11 +305,11 @@ class QueryService:
     def _is_broad_personal_query(question: str) -> bool:
         lower = f" {question.lower()} "
         broad_phrases = (
-            "what do i", "what should i", "what have i", "my deadlines",
-            "what deadlines", "upcoming", "coming up", "still need",
-            "need to complete", "need to do", "pending", "summarize",
-            "everything", "all my", "my tasks", "my files", "my project",
-            "how much have i paid",
+            "what do i", "what things do i", "what should i", "what have i",
+            "my deadlines", "what deadlines", "upcoming", "coming up",
+            "still need", "need to complete", "need to do", "pending",
+            "summarize", "everything", "all my", "my tasks", "my files",
+            "my project", "how much have i paid",
         )
         return any(p in lower for p in broad_phrases)
 
@@ -229,20 +328,41 @@ class QueryService:
         scored: list[tuple[int, dict[str, Any]]] = []
         for context in contexts:
             filename = str(context.get("filename") or "").lower()
+            data = context.get("data") or {}
+            
             haystack = " ".join(
                 [
                     str(context.get("summary") or ""),
                     filename,
-                    json.dumps(context.get("data") or {}, ensure_ascii=False),
+                    json.dumps(data, ensure_ascii=False),
                 ]
+            ).lower()
+            
+            deadlines_text = " ".join(
+                str(d) for d in (data.get("deadlines") or [])
             ).lower()
 
             score = 0
             for term in terms:
-                pattern = rf"\b{re.escape(term)}\b"
-                if re.search(pattern, filename):
+                aliases = MONTH_ALIASES.get(term, (term,))
+                matched_filename = False
+                matched_deadline = False
+                matched_haystack = False
+
+                for candidate in aliases:
+                    pattern = rf"\b{re.escape(candidate)}\b"
+                    if re.search(pattern, filename):
+                        matched_filename = True
+                    if re.search(pattern, deadlines_text):
+                        matched_deadline = True
+                    if re.search(pattern, haystack):
+                        matched_haystack = True
+
+                if matched_filename:
+                    score += 4
+                elif matched_deadline:
                     score += 3
-                elif re.search(pattern, haystack):
+                elif matched_haystack:
                     score += 1
 
             if score > 0:
@@ -579,7 +699,6 @@ class QueryService:
     @staticmethod
     def _deduplicate_deadlines(deadlines: list[str], dates: list[str]) -> list[str]:
         combined = [d.strip().rstrip(".") for d in deadlines if d.strip()]
-        # Filter out action sentences that accidentally leaked into deadlines
         pure_deadlines = [
             d
             for d in combined
@@ -587,12 +706,14 @@ class QueryService:
                 p in d.lower()
                 for p in ("you need to", "participants must", "needs to be paid")
             )
+            and not re.match(r"^date\s*:", d, flags=re.I)
         ]
         if not pure_deadlines and dates:
-            return [dates[0]]
+            valid_dates = [
+                d for d in dates if not re.match(r"^date\s*:", d, flags=re.I)
+            ]
+            return valid_dates[:1]
 
-        # If multiple strings refer to the same date (e.g., "30 September 2026" and "30 September"),
-        # keep the most specific one (the one with the year or longest detail).
         has_sept_30 = [d for d in pure_deadlines if "30" in d and "sep" in d.lower()]
         if has_sept_30:
             best = max(has_sept_30, key=len)
@@ -641,7 +762,11 @@ class QueryService:
             contributed = False
 
             summary_str = str(context.get("summary") or "").strip()
-            if summary_str and not summary_str.startswith("Document: "):
+            if (
+                summary_str
+                and not summary_str.startswith("Document: ")
+                and not re.match(r"^date\s*:", summary_str, flags=re.I)
+            ):
                 summaries.append(summary_str)
 
             for val in data.get("actions", []) or []:
@@ -664,7 +789,11 @@ class QueryService:
 
             for val in data.get("important_facts", []) or []:
                 s = str(val).strip()
-                if s and not s.startswith("Document: "):
+                if (
+                    s
+                    and not s.startswith("Document: ")
+                    and not re.match(r"^date\s*:", s, flags=re.I)
+                ):
                     facts.append(s)
                     contributed = True
 
@@ -682,7 +811,12 @@ class QueryService:
 
             for val in data.get("events", []) or []:
                 s = str(val).strip()
-                if s and s not in events and not s.startswith("Document:"):
+                if (
+                    s
+                    and s not in events
+                    and not s.startswith("Document:")
+                    and not re.match(r"^date\s*:", s, flags=re.I)
+                ):
                     events.append(s)
                     contributed = True
 
@@ -694,14 +828,12 @@ class QueryService:
                     }
                 )
 
-        # Separate true completed facts from pending requirements
         completed_facts = list(
             dict.fromkeys(
                 f.rstrip(".") for f in facts if is_completed_statement(f)
             )
         )
 
-        # Build deduplicated pending actions
         cleaned_actions: list[str] = []
         for act in [*raw_actions, *facts]:
             if is_completed_statement(act):
@@ -714,7 +846,6 @@ class QueryService:
                 if norm and norm not in cleaned_actions:
                     cleaned_actions.append(norm)
 
-        # If payment is already confirmed in another file, remove "Pay the ₹500..." from pending
         if any("paid" in c.lower() or "payment" in c.lower() for c in completed_facts):
             cleaned_actions = [
                 a for a in cleaned_actions if "registration fee" not in a.lower()
@@ -722,35 +853,46 @@ class QueryService:
 
         clean_deadlines = self._deduplicate_deadlines(raw_deadlines, dates)
 
-        # Determine primary event title
-        event_title = "Annual Tech Symposium 2026"
-        for candidate in [*events, *summaries]:
-            if "symposium" in candidate.lower():
-                event_title = candidate.rstrip(".")
-                break
-        else:
-            if events:
-                event_title = events[0]
-            elif summaries:
-                event_title = summaries[0]
+        # Dynamic Event Resolution
+        event_title = "your documents"
+        if events:
+            for ev in events:
+                if ev.lower() in question_lower:
+                    event_title = ev.rstrip(".")
+                    break
+            else:
+                unique_events = list(dict.fromkeys(events))
+                if len(unique_events) == 1:
+                    event_title = unique_events[0].rstrip(".")
+                else:
+                    event_title = "your upcoming events"
+        elif summaries:
+            event_title = summaries[0].rstrip(".")
 
         # ------------------------------------------------------------------
         # CASE 1: "What is X?" / "Tell me about X" / "Summarize X" (Overview)
         # ------------------------------------------------------------------
         is_overview_query = (
-            question_lower.startswith(("what is ", "what's ", "whats ", "tell me about ", "describe "))
+            question_lower.startswith(
+                ("what is ", "what's ", "whats ", "tell me about ", "describe ")
+            )
             or "summarize" in question_lower
             or "summary" in question_lower
             or "everything about" in question_lower
             or "important about" in question_lower
         ) and not any(
             kw in question_lower
-            for kw in ("what is the deadline", "what is my deadline", "what is the fee", "what is left")
+            for kw in (
+                "what is the deadline",
+                "what is my deadline",
+                "what is the fee",
+                "what is left",
+            )
         )
 
         if is_overview_query:
             lines: list[str] = [
-                f"{time_prefix}The {event_title} is an upcoming event documented in your vault."
+                f"{time_prefix}Here is the information found regarding {event_title}:"
             ]
             bullet_points: list[str] = []
 
@@ -789,7 +931,44 @@ class QueryService:
             }
 
         # ------------------------------------------------------------------
-        # CASE 2: Amount / Payment / Fee Questions
+        # CASE 2: Pending Tasks
+        # ------------------------------------------------------------------
+        if any(
+            kw in question_lower
+            for kw in (
+                "still need", "need to", "what do i", "what things",
+                "complete", "todo", "left", "finish", "pending",
+            )
+        ):
+            response_blocks: list[str] = []
+            if cleaned_actions:
+                if len(cleaned_actions) == 1:
+                    first = cleaned_actions[0]
+                    response_blocks.append(
+                        f"You still need to {first[0].lower() + first[1:]}."
+                    )
+                else:
+                    bullets = "\n".join(f"• {a}." for a in cleaned_actions)
+                    response_blocks.append(
+                        f"Based on {event_title}, you need to complete the following:\n{bullets}"
+                    )
+
+            if completed_facts:
+                response_blocks.append(f"{completed_facts[0]}.")
+
+            if clean_deadlines:
+                response_blocks.append(f"{clean_deadlines[0]}.")
+
+            if response_blocks:
+                return {
+                    "answer": time_prefix + "\n\n".join(response_blocks),
+                    "confidence": 0.94,
+                    "has_sufficient_context": True,
+                    "sources": used_sources,
+                }
+
+        # ------------------------------------------------------------------
+        # CASE 3: Amount / Payment / Fee Questions
         # ------------------------------------------------------------------
         if any(
             w in question_lower
@@ -797,7 +976,7 @@ class QueryService:
         ):
             if completed_facts and amounts:
                 return {
-                    "answer": f"{time_prefix}Yes, your {amounts[0]} registration payment is already complete ({completed_facts[0]}).",
+                    "answer": f"{time_prefix}Yes, your {amounts[0]} payment is already complete ({completed_facts[0]}).",
                     "confidence": 0.94,
                     "has_sufficient_context": True,
                     "sources": used_sources,
@@ -805,7 +984,7 @@ class QueryService:
             if amounts:
                 return {
                     "answer": (
-                        f"{time_prefix}The registration fee for the {event_title} is {amounts[0]}. "
+                        f"{time_prefix}The fee for {event_title} is {amounts[0]}. "
                         "Your notes mention it needs to be paid before registration closes if you haven't already."
                     ),
                     "confidence": 0.9,
@@ -814,7 +993,7 @@ class QueryService:
                 }
 
         # ------------------------------------------------------------------
-        # CASE 3: People / Team Questions
+        # CASE 4: People / Team Questions
         # ------------------------------------------------------------------
         if any(w in question_lower for w in ("who is", "team", "working with")):
             if people:
@@ -832,7 +1011,7 @@ class QueryService:
             }
 
         # ------------------------------------------------------------------
-        # CASE 4: Deadline / Date Questions ("When is...")
+        # CASE 5: Deadline / Date Questions ("When is...")
         # ------------------------------------------------------------------
         if any(
             w in question_lower
@@ -845,47 +1024,17 @@ class QueryService:
                     "has_sufficient_context": True,
                     "sources": used_sources,
                 }
-            if dates:
+            if facts:
                 return {
-                    "answer": f"{time_prefix}The documented date for {event_title} is {dates[0]}.",
-                    "confidence": 0.9,
+                    "answer": f"{time_prefix}{'. '.join(facts[:2])}.",
+                    "confidence": 0.88,
                     "has_sufficient_context": True,
                     "sources": used_sources,
                 }
-
-        # ------------------------------------------------------------------
-        # CASE 5: Pending Tasks ("What do I still need to do?")
-        # ------------------------------------------------------------------
-        if any(
-            kw in question_lower
-            for kw in (
-                "still need", "need to", "what do i", "complete",
-                "todo", "left", "finish", "pending",
-            )
-        ):
-            response_blocks: list[str] = []
-            if cleaned_actions:
-                if len(cleaned_actions) == 1:
-                    first = cleaned_actions[0]
-                    response_blocks.append(
-                        f"You still need to {first[0].lower() + first[1:]}."
-                    )
-                else:
-                    bullets = "\n".join(f"• {a}." for a in cleaned_actions)
-                    response_blocks.append(
-                        f"For the {event_title}, you still need to:\n{bullets}"
-                    )
-
-            if completed_facts:
-                response_blocks.append(f"{completed_facts[0]}.")
-
-            if clean_deadlines:
-                response_blocks.append(f"{clean_deadlines[0]}.")
-
-            if response_blocks:
+            if dates:
                 return {
-                    "answer": time_prefix + "\n\n".join(response_blocks),
-                    "confidence": 0.93,
+                    "answer": f"{time_prefix}The documented date is {dates[0]}.",
+                    "confidence": 0.85,
                     "has_sufficient_context": True,
                     "sources": used_sources,
                 }
@@ -893,21 +1042,33 @@ class QueryService:
         # ------------------------------------------------------------------
         # CASE 6: Clean Default Synthesis
         # ------------------------------------------------------------------
-        fallback_lines: list[str] = [f"{event_title}:"]
+        details: list[str] = []
         if clean_deadlines:
-            fallback_lines.append(f"• {clean_deadlines[0]}.")
-        if cleaned_actions:
-            for act in cleaned_actions:
-                fallback_lines.append(f"• {act}.")
-        if completed_facts:
-            for comp in completed_facts:
-                fallback_lines.append(f"• {comp}.")
+            details.append(f"• {clean_deadlines[0]}.")
+        for act in cleaned_actions:
+            details.append(f"• {act}.")
+        for comp in completed_facts:
+            details.append(f"• {comp}.")
+        if not details and facts:
+            for f in facts[:3]:
+                details.append(f"• {f.rstrip('.')}.")
+
+        if details:
+            return {
+                "answer": f"{time_prefix}{event_title}:\n" + "\n".join(details),
+                "confidence": 0.88,
+                "has_sufficient_context": True,
+                "sources": used_sources,
+            }
 
         return {
-            "answer": time_prefix + "\n".join(fallback_lines),
-            "confidence": 0.88,
-            "has_sufficient_context": True,
-            "sources": used_sources,
+            "answer": (
+                f"{time_prefix}I couldn't find any specific tasks or details for that "
+                "in your available documents."
+            ),
+            "confidence": 0.3,
+            "has_sufficient_context": False,
+            "sources": [],
         }
 
     @classmethod
