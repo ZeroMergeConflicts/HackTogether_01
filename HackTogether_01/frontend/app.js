@@ -1,8 +1,11 @@
 const API_BASE =
   window.location.port === "8000" ? "" : "http://127.0.0.1:8000";
 
+/* =====================================================================
+   MODULE 1: CENTRAL APPLICATION STATE
+   ===================================================================== */
 const state = {
-  currentRoute: "dashboard",
+  currentRoute: "welcome",
   selectedFolder: ".test",
   files: [],
   context: [],
@@ -10,6 +13,7 @@ const state = {
   errors: [],
   health: { status: "ok", ai_configured: false, model: "gemini-2.5-flash" },
   scanStatus: { status: "idle", total: 0, processed: 0, failed: 0 },
+  activeHeroDemo: "symposium",
   chatHistory: [
     {
       role: "assistant",
@@ -28,6 +32,7 @@ const state = {
 };
 
 const VIEW_META = {
+  welcome: { eyebrow: "PRODUCT / LANDING", title: "ContextVault" },
   dashboard: { eyebrow: "WORKSPACE / OVERVIEW", title: "Overview" },
   ask: { eyebrow: "WORKSPACE / AI STUDIO", title: "Ask ContextVault" },
   actions: { eyebrow: "WORKSPACE / TASK MATRIX", title: "Action & Deadline Board" },
@@ -35,6 +40,50 @@ const VIEW_META = {
   files: { eyebrow: "REPOSITORY / REGISTRY", title: "Vault Files" },
   explorer: { eyebrow: "REPOSITORY / EXTRACTIONS", title: "Context Explorer" },
   telemetry: { eyebrow: "REPOSITORY / DIAGNOSTICS", title: "Links & System Telemetry" },
+};
+
+const HERO_DEMOS = {
+  symposium: {
+    query: "“What do I still need to complete for the Tech Symposium?”",
+    answer:
+      "For the Annual Tech Symposium 2026, you still need to:\n• Submit the project abstract before the registration deadline.\n• Pay the ₹500 registration fee (if not already paid).\n\nRegistration deadline: 30 September 2026.",
+    sources: [
+      {
+        filename: "symposium_notice.txt",
+        desc: "Event: Annual Tech Symposium · Deadline: 30 Sept 2026 · Abstract required",
+      },
+      {
+        filename: "symposium_whatsapp.txt",
+        desc: "Reminder: Submit project abstract before registration closes · ₹500 fee",
+      },
+    ],
+  },
+  payment: {
+    query: "“How much is the registration fee and have I paid it?”",
+    answer:
+      "The registration fee for the Annual Tech Symposium 2026 is ₹500. Your notes state that it needs to be paid before registration closes on 30 September 2026 if you haven't already.",
+    sources: [
+      {
+        filename: "symposium_whatsapp.txt",
+        desc: "Amount: ₹500 registration fee · Status: Pending verification",
+      },
+      {
+        filename: "symposium_notice.txt",
+        desc: "Official circular · Registration closes 30 September 2026",
+      },
+    ],
+  },
+  exam: {
+    query: "“When is my math exam and what topics are covered?”",
+    answer:
+      "Check your indexed math notes directly by hovering or clicking the source chip below to inspect the full syllabus and exam schedule.",
+    sources: [
+      {
+        filename: "math.txt",
+        desc: "Mathematics study notes & exam date reference",
+      },
+    ],
+  },
 };
 
 const elements = {
@@ -59,6 +108,9 @@ const elements = {
   toastContainer: document.getElementById("toastContainer"),
 };
 
+/* =====================================================================
+   MODULE 2: CORE UTILITIES & API ADAPTER
+   ===================================================================== */
 function refreshIcons() {
   if (window.lucide && typeof window.lucide.createIcons === "function") {
     window.lucide.createIcons();
@@ -112,38 +164,6 @@ function setStatus(message) {
   }
 }
 
-/* ==================== ROUTER ==================== */
-function navigateTo(route) {
-  const targetRoute = VIEW_META[route] ? route : "dashboard";
-  state.currentRoute = targetRoute;
-
-  if (window.location.hash !== `#/${targetRoute}`) {
-    history.replaceState(null, "", `#/${targetRoute}`);
-  }
-
-  document.querySelectorAll(".view-page").forEach((section) => {
-    section.classList.toggle("active", section.id === `view-${targetRoute}`);
-  });
-
-  document.querySelectorAll(".nav-item").forEach((link) => {
-    link.classList.toggle("active", link.dataset.route === targetRoute);
-  });
-
-  const meta = VIEW_META[targetRoute];
-  document.getElementById("currentViewEyebrow").textContent = meta.eyebrow;
-  document.getElementById("currentViewTitle").textContent = meta.title;
-
-  if (targetRoute === "graph" || targetRoute === "dashboard") {
-    buildGraphTopology();
-  }
-}
-
-window.addEventListener("hashchange", () => {
-  const hash = window.location.hash.replace(/^#\/?/, "") || "dashboard";
-  navigateTo(hash);
-});
-
-/* ==================== FILE REFERENCE CHIP ==================== */
 function findFileRecord(fileId, filename) {
   if (fileId != null && fileId !== "") {
     const byId = state.files.find((f) => Number(f.id) === Number(fileId));
@@ -173,7 +193,130 @@ function renderFileChip(fileId, filename) {
   `;
 }
 
-/* ==================== VAULT AGGREGATION ==================== */
+/* =====================================================================
+   MODULE 3: DUAL-SHELL ROUTER (LANDING <-> WORKSPACE)
+   ===================================================================== */
+function navigateTo(route) {
+  const targetRoute = VIEW_META[route] ? route : "welcome";
+  state.currentRoute = targetRoute;
+
+  if (window.location.hash !== `#/${targetRoute}`) {
+    history.replaceState(null, "", `#/${targetRoute}`);
+  }
+
+  if (targetRoute === "welcome") {
+    document.body.setAttribute("data-shell-mode", "landing");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    renderLandingHero();
+    refreshIcons();
+    return;
+  }
+
+  document.body.setAttribute("data-shell-mode", "workspace");
+
+  document.querySelectorAll(".view-page").forEach((section) => {
+    section.classList.toggle("active", section.id === `view-${targetRoute}`);
+  });
+
+  document.querySelectorAll(".nav-item").forEach((link) => {
+    link.classList.toggle("active", link.dataset.route === targetRoute);
+  });
+
+  const meta = VIEW_META[targetRoute];
+  document.getElementById("currentViewEyebrow").textContent = meta.eyebrow;
+  document.getElementById("currentViewTitle").textContent = meta.title;
+
+  if (targetRoute === "graph" || targetRoute === "dashboard") {
+    buildGraphTopology();
+  }
+  refreshIcons();
+}
+
+window.addEventListener("hashchange", () => {
+  const hash = window.location.hash.replace(/^#\/?/, "");
+  if (hash && VIEW_META[hash]) {
+    navigateTo(hash);
+  }
+});
+
+/* =====================================================================
+   MODULE 4: LANDING PAGE & INTERACTIVE HERO SHOWCASE
+   ===================================================================== */
+function renderLandingHero() {
+  const demo = HERO_DEMOS[state.activeHeroDemo] || HERO_DEMOS.symposium;
+
+  const hFiles = document.getElementById("heroStatFiles");
+  const hCtx = document.getElementById("heroStatContext");
+  const hLinks = document.getElementById("heroStatLinks");
+  const hEngine = document.getElementById("heroStatEngine");
+
+  if (hFiles) hFiles.textContent = String(state.files.length);
+  if (hCtx) hCtx.textContent = String(state.context.length);
+  if (hLinks) hLinks.textContent = String(state.relationships.length);
+  if (hEngine) {
+    hEngine.textContent = state.health.ai_configured ? "GEMINI LIVE" : "READY";
+  }
+
+  const queryEl = document.getElementById("heroDemoQuery");
+  const answerEl = document.getElementById("heroDemoAnswer");
+  const sourcesEl = document.getElementById("heroDemoSources");
+  const citationsEl = document.getElementById("heroDemoCitations");
+
+  if (queryEl) queryEl.textContent = demo.query;
+  if (answerEl) answerEl.textContent = demo.answer;
+
+  if (sourcesEl) {
+    sourcesEl.innerHTML = demo.sources
+      .map((s) => {
+        const rec = findFileRecord(null, s.filename);
+        const fid = rec ? rec.id : "";
+        return `
+          <div
+            class="demo-source-card"
+            data-file-id="${escapeHtml(fid)}"
+            data-filename="${escapeHtml(s.filename)}"
+          >
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <strong style="display:flex;align-items:center;gap:6px;font-size:0.86rem;">
+                <i data-lucide="${iconForExtension(s.filename)}" class="icon-sm indigo-text"></i>
+                ${escapeHtml(s.filename)}
+              </strong>
+              <span class="badge badge-indigo">Hover / Click</span>
+            </div>
+            <p style="font-size:0.78rem;color:var(--text-secondary);">${escapeHtml(s.desc)}</p>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  if (citationsEl) {
+    citationsEl.innerHTML = `
+      <span class="mono-label">ATTRIBUTED SOURCES:</span>
+      ${demo.sources.map((s) => renderFileChip(null, s.filename)).join("")}
+    `;
+  }
+
+  const bentoChips = document.getElementById("landingInteractiveChips");
+  if (bentoChips) {
+    const sampleFiles = state.files.length
+      ? state.files.slice(0, 4)
+      : [
+        { id: "", name: "symposium_notice.txt" },
+        { id: "", name: "symposium_whatsapp.txt" },
+        { id: "", name: "math.txt" },
+      ];
+    bentoChips.innerHTML = sampleFiles
+      .map((f) => renderFileChip(f.id, f.name))
+      .join("");
+  }
+
+  refreshIcons();
+}
+
+/* =====================================================================
+   MODULE 5: VAULT AGGREGATION & WORKSPACE RENDERERS
+   ===================================================================== */
 function isCompletedText(text) {
   const lower = String(text || "").toLowerCase();
   if (
@@ -250,7 +393,6 @@ function getAggregatedVaultStats() {
   };
 }
 
-/* ==================== VIEW RENDERERS ==================== */
 function renderStats() {
   const agg = getAggregatedVaultStats();
   elements.fileCount.textContent = String(state.files.length);
@@ -590,7 +732,9 @@ function renderRelationshipsAndTelemetry() {
   refreshIcons();
 }
 
-/* ==================== AI STUDIO & CHAT ==================== */
+/* =====================================================================
+   MODULE 6: ASK AI STUDIO & CONVERSATIONAL SYNTHESIS
+   ===================================================================== */
 function renderChatStream() {
   if (!elements.chatStream) return;
   elements.chatStream.innerHTML = state.chatHistory
@@ -719,38 +863,51 @@ async function askContextVault(customQuestion) {
   }
 }
 
-/* ==================== HOVER QUICK-PEEK & DEEP INSPECTOR ==================== */
+/* =====================================================================
+   MODULE 7: HOVER QUICK-PEEK & DEEP FILE INSPECTOR
+   ===================================================================== */
 async function fetchFilePreviewData(fileId, filename) {
   const record = findFileRecord(fileId, filename);
   const resolvedId = record ? record.id : fileId;
-  if (!resolvedId) return null;
 
-  if (state.previewCache.has(Number(resolvedId))) {
+  if (resolvedId && state.previewCache.has(Number(resolvedId))) {
     return state.previewCache.get(Number(resolvedId));
   }
 
-  try {
-    const data = await apiRequest(`/api/files/${resolvedId}/preview`);
-    state.previewCache.set(Number(resolvedId), data);
-    return data;
-  } catch {
-    const ctx = state.context.find((c) => Number(c.file_id) === Number(resolvedId));
-    return {
-      file: record || {
-        id: resolvedId,
-        name: filename || `File #${resolvedId}`,
-        status: "analyzed",
-        extension: ".txt",
-      },
-      exists_on_disk: false,
-      preview_type: "text",
-      text_content: ctx ? ctx.summary : "Preview available after scanning.",
-      context: ctx ? [ctx] : [],
-      relationships: state.relationships.filter(
-        (r) => r.source_id === resolvedId || r.target_id === resolvedId,
-      ),
-    };
+  if (resolvedId) {
+    try {
+      const data = await apiRequest(`/api/files/${resolvedId}/preview`);
+      state.previewCache.set(Number(resolvedId), data);
+      return data;
+    } catch {
+      // Fallback if preview route is unavailable
+    }
   }
+
+  const ctx = state.context.find(
+    (c) =>
+      (resolvedId && Number(c.file_id) === Number(resolvedId)) ||
+      (filename && String(c.filename).toLowerCase() === String(filename).toLowerCase()),
+  );
+
+  return {
+    file: record || {
+      id: resolvedId || 0,
+      name: filename || "symposium_notice.txt",
+      status: "analyzed",
+      extension: ".txt",
+      hash: "709c49991cff072e3714d665",
+    },
+    exists_on_disk: false,
+    preview_type: "text",
+    text_content: ctx
+      ? ctx.summary
+      : "Annual Tech Symposium 2026\nRegistration deadline: 30 September 2026\nParticipants must submit a project abstract during registration.\nRegistration fee: ₹500.",
+    context: ctx ? [ctx] : [],
+    relationships: state.relationships.filter(
+      (r) => r.source_id === resolvedId || r.target_id === resolvedId,
+    ),
+  };
 }
 
 let hoverTimer = null;
@@ -919,47 +1076,9 @@ async function openFileInspector(fileId, filename) {
   refreshIcons();
 }
 
-document.addEventListener("mouseover", (event) => {
-  const trigger = event.target.closest("[data-file-id], [data-filename]");
-  if (!trigger) return;
-  clearTimeout(hoverTimer);
-  hoverTimer = setTimeout(() => {
-    showHoverPreview(trigger, event.clientX, event.clientY);
-  }, 140);
-});
-
-document.addEventListener("mousemove", (event) => {
-  if (!elements.fileHoverCard.classList.contains("hidden")) {
-    positionHoverCard(event.clientX, event.clientY);
-  }
-});
-
-document.addEventListener("mouseout", (event) => {
-  const trigger = event.target.closest("[data-file-id], [data-filename]");
-  if (trigger) hideHoverPreview();
-});
-
-document.addEventListener("click", (event) => {
-  const navBtn = event.target.closest("[data-nav-target]");
-  if (navBtn) {
-    navigateTo(navBtn.dataset.navTarget);
-    return;
-  }
-
-  const preset = event.target.closest(".suggestion-chip");
-  if (preset && preset.dataset.query) {
-    askContextVault(preset.dataset.query);
-    return;
-  }
-
-  const fileTrigger = event.target.closest("[data-file-id], [data-filename]");
-  if (fileTrigger) {
-    event.preventDefault();
-    openFileInspector(fileTrigger.dataset.fileId, fileTrigger.dataset.filename);
-  }
-});
-
-/* ==================== FORCE-DIRECTED GRAPH ==================== */
+/* =====================================================================
+   MODULE 8: FORCE-DIRECTED GRAPH ENGINE
+   ===================================================================== */
 function buildGraphTopology() {
   const filter = document.getElementById("graphFilterSelect")?.value || "all";
   const nodes = [];
@@ -1198,7 +1317,9 @@ function startGraphLoop() {
   requestAnimationFrame(animate);
 }
 
-/* ==================== DATA FETCH & SCAN ==================== */
+/* =====================================================================
+   MODULE 9: DATA SYNC, SCANNING & COMMAND PALETTE
+   ===================================================================== */
 async function fetchDashboard() {
   const [files, context, relationships, errors, health] = await Promise.all([
     apiRequest("/api/files"),
@@ -1215,6 +1336,7 @@ async function fetchDashboard() {
   state.health = health;
   state.previewCache.clear();
 
+  renderLandingHero();
   renderStats();
   renderFiles();
   renderContextExplorer();
@@ -1225,12 +1347,7 @@ async function fetchDashboard() {
 }
 
 async function scanFolder() {
-  const folderPath = elements.folderPath.value.trim();
-  if (!folderPath) {
-    setStatus("Enter a folder path");
-    return;
-  }
-
+  const folderPath = elements.folderPath.value.trim() || ".test";
   const labelEl = document.getElementById("scanBtnLabel");
   if (labelEl) labelEl.textContent = "Scanning...";
   setStatus("Scanning folder...");
@@ -1256,7 +1373,6 @@ async function scanFolder() {
   }
 }
 
-/* ==================== COMMAND PALETTE ==================== */
 function openCommandPalette() {
   elements.cmdPaletteBackdrop.classList.remove("hidden");
   const input = document.getElementById("cmdInput");
@@ -1272,7 +1388,8 @@ function closeCommandPalette() {
 function renderCommandResults(filterText) {
   const q = filterText.toLowerCase().trim();
   const items = [
-    { label: "Go to Overview", sub: "Workspace", action: () => navigateTo("dashboard") },
+    { label: "Product Home (Landing Page)", sub: "Product", action: () => navigateTo("welcome") },
+    { label: "Go to Command Overview", sub: "Workspace", action: () => navigateTo("dashboard") },
     { label: "Go to Ask AI Studio", sub: "Workspace", action: () => navigateTo("ask") },
     { label: "Go to Action & Deadline Board", sub: "Workspace", action: () => navigateTo("actions") },
     { label: "Go to Synaptic Knowledge Graph", sub: "Workspace", action: () => navigateTo("graph") },
@@ -1306,8 +1423,63 @@ function renderCommandResults(filterText) {
   });
 }
 
-/* ==================== INITIALIZATION ==================== */
+/* =====================================================================
+   EVENT DELEGATION & BOOTSTRAP
+   ===================================================================== */
+document.addEventListener("mouseover", (event) => {
+  const trigger = event.target.closest("[data-file-id], [data-filename]");
+  if (!trigger) return;
+  clearTimeout(hoverTimer);
+  hoverTimer = setTimeout(() => {
+    showHoverPreview(trigger, event.clientX, event.clientY);
+  }, 140);
+});
+
+document.addEventListener("mousemove", (event) => {
+  if (!elements.fileHoverCard.classList.contains("hidden")) {
+    positionHoverCard(event.clientX, event.clientY);
+  }
+});
+
+document.addEventListener("mouseout", (event) => {
+  const trigger = event.target.closest("[data-file-id], [data-filename]");
+  if (trigger) hideHoverPreview();
+});
+
+document.addEventListener("click", (event) => {
+  const demoTab = event.target.closest("[data-demo]");
+  if (demoTab) {
+    document.querySelectorAll(".win-tab").forEach((b) => b.classList.remove("active"));
+    demoTab.classList.add("active");
+    state.activeHeroDemo = demoTab.dataset.demo;
+    renderLandingHero();
+    return;
+  }
+
+  const navBtn = event.target.closest("[data-nav-target]");
+  if (navBtn) {
+    navigateTo(navBtn.dataset.navTarget);
+    return;
+  }
+
+  const preset = event.target.closest(".suggestion-chip");
+  if (preset && preset.dataset.query) {
+    askContextVault(preset.dataset.query);
+    return;
+  }
+
+  const fileTrigger = event.target.closest("[data-file-id], [data-filename]");
+  if (fileTrigger) {
+    event.preventDefault();
+    openFileInspector(fileTrigger.dataset.fileId, fileTrigger.dataset.filename);
+  }
+});
+
 document.getElementById("scanBtn").addEventListener("click", scanFolder);
+document.getElementById("heroQuickScanBtn")?.addEventListener("click", () => {
+  navigateTo("dashboard");
+  scanFolder();
+});
 document.getElementById("refreshBtn").addEventListener("click", () => {
   fetchDashboard().then(() => showToast("Vault state synced"));
 });
@@ -1379,6 +1551,7 @@ document.querySelectorAll(".drawer-tab").forEach((tab) => {
 });
 
 document.getElementById("openCmdPaletteBtn").addEventListener("click", openCommandPalette);
+document.getElementById("landingCmdBtn")?.addEventListener("click", openCommandPalette);
 document.getElementById("closeCmdBtn").addEventListener("click", closeCommandPalette);
 document.getElementById("cmdInput").addEventListener("input", (e) => {
   renderCommandResults(e.target.value);
@@ -1394,9 +1567,11 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-const initialHash = window.location.hash.replace(/^#\/?/, "") || "dashboard";
-navigateTo(initialHash);
+// Boot application into Product Landing Page by default (or hash route if specified)
+const initialHash = window.location.hash.replace(/^#\/?/, "");
+navigateTo(VIEW_META[initialHash] ? initialHash : "welcome");
 renderChatStream();
+renderLandingHero();
 startGraphLoop();
 refreshIcons();
 fetchDashboard().catch((error) => {
