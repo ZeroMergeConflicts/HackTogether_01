@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ContextVault — Personal Context Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-shell-mode="landing">
+    <!-- Ambient Lighting & Precision Grid -->
+    <div class="ambient-lighting" aria-hidden="true">
+      <div class="spotlight spotlight-top"></div>
+      <div class="spotlight spotlight-center"></div>
+      <div class="spotlight spotlight-bottom"></div>
+      <div class="subtle-grid"></div>
+    </div>
+
+    <!-- =====================================================================
+         SHELL 1: PRODUCT LANDING & HERO EXPERIENCE (#/welcome)
+         ===================================================================== -->
+    <div id="landingShell" class="landing-shell">
+      <!-- Floating Product Navbar -->
+      <header class="landing-navbar">
+        <div class="landing-nav-inner">
+          <a href="#/welcome" class="landing-brand">
+            <div class="brand-mark">
+              <i data-lucide="layers" class="icon-sm"></i>
+            </div>
+            <span class="brand-name">ContextVault</span>
+            <span class="version-pill">v0.2</span>
+          </a>
+
+          <nav class="landing-nav-links">
+            <a href="#features-bento" class="landing-anchor">Modules</a>
+            <a href="#comparison-section" class="landing-anchor">Why ContextVault</a>
+            <a href="#pipeline-section" class="landing-anchor">Architecture</a>
+            <a href="#workspace-modules" class="landing-anchor">Workspace</a>
+          </nav>
+
+          <div class="landing-nav-Right">
+            <button class="btn btn-ghost btn-sm" id="landingCmdBtn" type="button">
+              <i data-lucide="command" class="icon-xs"></i>
+              <span>Ctrl K</span>
+            </button>
+            <button
+              class="btn btn-primary btn-glow"
+              data-nav-target="dashboard"
+              type="button"
+            >
+              <span>Launch Workspace</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- HERO SECTION -->
+      <section class="hero-section">
+        <div class="hero-container">
+          <div class="hero-pill-banner">
+            <span class="pill-spark">✦ NEW</span>
+            <span>ContextVault Engine v0.2 — Multimodal Gemini 2.5 Flash + SHA-256 Indexing</span>
+            <button class="pill-link" data-nav-target="ask" type="button">
+              Try AI Studio →
+            </button>
+          </div>
+
+          <h1 class="hero-display-title">
+            Your scattered files, reconstructed into
+            <span class="serif-gradient">living intelligence.</span>
+          </h1>
+
+          <p class="hero-lead">
+            Stop digging through disconnected PDFs, WhatsApp screenshots, and payment
+            receipts. ContextVault extracts structured entities, links cross-file
+            relationships, and answers your questions with one-click source verification.
+          </p>
+
+          <div class="hero-cta-group">
+            <button
+              class="btn btn-primary btn-lg btn-glow"
+              data-nav-target="dashboard"
+              type="button"
+            >
+              <i data-lucide="layout-dashboard" class="icon-sm"></i>
+              <span>Enter Command Workspace</span>
+            </button>
+            <button
+              class="btn btn-secondary btn-lg"
+              data-nav-target="ask"
+              type="button"
+            >
+              <i data-lucide="sparkles" class="icon-sm"></i>
+              <span>Ask ContextVault AI</span>
+            </button>
+            <button
+              class="btn btn-ghost btn-lg"
+              id="heroQuickScanBtn"
+              type="button"
+            >
+              <i data-lucide="scan-line" class="icon-sm"></i>
+              <span>Scan .test Vault Now</span>
+            </button>
+          </div>
+
+          <!-- LIVE TELEMETRY RIBBON -->
+          <div class="hero-telemetry-ribbon">
+            <div class="ribbon-stat">
+              <span class="mono-label">INDEXED FILES</span>
+              <strong id="heroStatFiles">0</strong>
+            </div>
+            <div class="ribbon-divider"></div>
+            <div class="ribbon-stat">
+              <span class="mono-label">CONTEXT RECORDS</span>
+              <strong id="heroStatContext">0</strong>
+            </div>
+            <div class="ribbon-divider"></div>
+            <div class="ribbon-stat">
+              <span class="mono-label">SYNAPTIC LINKS</span>
+              <strong id="heroStatLinks">0</strong>
+            </div>
+            <div class="ribbon-divider"></div>
+            <div class="ribbon-stat">
+              <span class="mono-label">ENGINE STATUS</span>
+              <strong class="emerald-text" id="heroStatEngine">READY</strong>
+            </div>
+          </div>
+
+          <!-- 3D INTERACTIVE PRODUCT SHOWCASE STAGE -->
+          <div class="hero-showcase-frame">
+            <div class="showcase-glow"></div>
+            <div class="showcase-window">
+              <div class="window-chrome">
+                <div class="window-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <div class="window-tabs" id="heroDemoTabs">
+                  <button
+                    class="win-tab active"
+                    data-demo="symposium"
+                    type="button"
+                  >
+                    <i data-lucide="sparkles" class="icon-xs"></i>
+                    <span>Demo 1: Cross-File Symposium Synthesis</span>
+                  </button>
+                  <button class="win-tab" data-demo="payment" type="button">
+                    <i data-lucide="indian-rupee" class="icon-xs"></i>
+                    <span>Demo 2: Payment & Fee Verification</span>
+                  </button>
+                  <button class="win-tab" data-demo="exam" type="button">
+                    <i data-lucide="calendar" class="icon-xs"></i>
+                    <span>Demo 3: Exam Schedule Lookup</span>
+                  </button>
+                </div>
+                <div class="window-status">
+                  <span class="badge badge-emerald">GROUNDED · 94% CONFIDENCE</span>
+                </div>
+              </div>
+
+              <div class="showcase-body">
+                <!-- Left Column: Scattered Evidence Inputs -->
+                <div class="showcase-col">
+                  <div class="showcase-col-header">
+                    <span class="mono-label">01 // SCATTERED SOURCE FILES (HOVER OR CLICK)</span>
+                  </div>
+                  <div class="showcase-files-stack" id="heroDemoSources">
+                    <!-- Populated dynamically by LandingModule -->
+                  </div>
+                </div>
+
+                <!-- Center Column: Neural Synthesis Pipe -->
+                <div class="showcase-pipe">
+                  <div class="pipe-line"></div>
+                  <div class="pipe-node">
+                    <i data-lucide="cpu" class="icon-md"></i>
+                    <span>Gemini 2.5</span>
+                    <small>Cross-Document Synthesis</small>
+                  </div>
+                  <div class="pipe-line"></div>
+                </div>
+
+                <!-- Right Column: Reconstructed Output -->
+                <div class="showcase-col">
+                  <div class="showcase-col-header">
+                    <span class="mono-label">02 // RECONSTRUCTED NATURAL ANSWER</span>
+                  </div>
+                  <div class="showcase-answer-box">
+                    <div class="showcase-query-pill" id="heroDemoQuery">
+                      “What do I still need to complete for the Tech Symposium?”
+                    </div>
+                    <div class="showcase-answer-text" id="heroDemoAnswer"></div>
+                    <div class="showcase-citation-row" id="heroDemoCitations"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODULE 2: RETRIEVAL VS. REASONING INTERACTIVE COMPARISON -->
+      <section class="landing-section" id="comparison-section">
+        <div class="section-container">
+          <div class="section-title-block">
+            <span class="mono-label">THE CORE PARADIGM SHIFT</span>
+            <h2>Retrieval is not understanding.</h2>
+            <p>
+              Traditional tools dump matching filenames. ContextVault reasons across
+              multiple documents, filters out noise, and separates internal evidence
+              from the human-readable answer.
+            </p>
+          </div>
+
+          <div class="comparison-grid">
+            <article class="surface-card comp-card bad-card">
+              <div class="comp-header">
+                <span class="pill failed">✕ LEGACY DOCUMENT SEARCH</span>
+                <span class="mono-label">RAW FILE DUMPING</span>
+              </div>
+              <div class="comp-prompt">
+                User: “What do I still need to do for the Tech Symposium?”
+              </div>
+              <pre class="comp-output bad-output">
+The relevant context suggests:
+Review symposium whatsapp.
+Review math.
+
+Files found:
+- symposium_whatsapp.txt
+- math.txt
+- a.txt
+- b.txt
+- symposium_notice.txt</pre>
+              <ul class="comp-notes">
+                <li>Repeats filenames instead of answering the question</li>
+                <li>Leaks unrelated files (<code>math.txt</code>, <code>a.txt</code>)</li>
+                <li>Cannot tell which actions are completed vs. pending</li>
+              </ul>
+            </article>
+
+            <article class="surface-card comp-card good-card">
+              <div class="comp-header">
+                <span class="pill analyzed">✓ CONTEXTVAULT REASONING ENGINE</span>
+                <span class="mono-label">CROSS-FILE SYNTHESIS</span>
+              </div>
+              <div class="comp-prompt">
+                User: “What do I still need to do for the Tech Symposium?”
+              </div>
+              <div class="comp-output good-output">
+                <p>
+                  For the <strong>Annual Tech Symposium 2026</strong>, you still need to:
+                </p>
+                <ul>
+                  <li>Submit the project abstract before the registration deadline.</li>
+                  <li>Pay the ₹500 registration fee (if not already paid).</li>
+                </ul>
+                <p class="muted-line">Registration closes on 30 September 2026.</p>
+                <div class="comp-sources-strip">
+                  <span class="mono-label">VERIFIED SOURCES:</span>
+                  <span
+                    class="file-ref-chip"
+                    data-filename="symposium_notice.txt"
+                  >
+                    <i data-lucide="file-code-2" class="icon-xs"></i>
+                    symposium_notice.txt
+                  </span>
+                  <span
+                    class="file-ref-chip"
+                    data-filename="symposium_whatsapp.txt"
+                  >
+                    <i data-lucide="file-code-2" class="icon-xs"></i>
+                    symposium_whatsapp.txt
+                  </span>
+                </div>
+              </div>
+              <ul class="comp-notes good-notes">
+                <li>Synthesizes facts across notices, notes, and receipts</li>
+                <li>Filters out irrelevant files automatically</li>
+                <li>Attaches hoverable, clickable source citations separately</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODULE 3: 6-CARD MODULAR BENTO FEATURE GRID -->
+      <section class="landing-section" id="features-bento">
+        <div class="section-container">
+          <div class="section-title-block">
+            <span class="mono-label">MODULAR PRODUCT ARCHITECTURE</span>
+            <h2>Engineered like a precision instrument.</h2>
+            <p>
+              Every subsystem in ContextVault is modularized—from deterministic
+              SHA-256 ingestion to provider-independent Gemini reasoning.
+            </p>
+          </div>
+
+          <div class="product-bento-grid">
+            <article class="surface-card bento-feature span-8">
+              <div class="feature-icon-box indigo">
+                <i data-lucide="mouse-pointer-click" class="icon-md"></i>
+              </div>
+              <span class="mono-label">UNIVERSAL SOURCE VERIFICATION</span>
+              <h3>Instant Hover Quick-Peek & Deep File Inspector</h3>
+              <p>
+                Every cited file across the entire application is interactive. Hover any
+                file chip to inspect its SHA-256 hash, summary, and live text snippet in
+                a floating glass card—or click to open the 4-tab slide-over inspector.
+              </p>
+              <div class="feature-interactive-demo">
+                <span class="mono-label">TRY LIVE INTERACTION:</span>
+                <div id="landingInteractiveChips" class="chip-group"></div>
+              </div>
+            </article>
+
+            <article class="surface-card bento-feature span-4">
+              <div class="feature-icon-box emerald">
+                <i data-lucide="shield-check" class="icon-md"></i>
+              </div>
+              <span class="mono-label">COST-CONTROLLED INGESTION</span>
+              <h3>SHA-256 Incremental Hashing</h3>
+              <p>
+                Files are hashed locally before any AI call. Unchanged files are skipped
+                instantly, protecting your Gemini API free-tier quota.
+              </p>
+              <div class="code-mini-pill">SHA256(file) == db.hash → SKIP</div>
+            </article>
+
+            <article class="surface-card bento-feature span-4">
+              <div class="feature-icon-box cyan">
+                <i data-lucide="git-branch" class="icon-md"></i>
+              </div>
+              <span class="mono-label">INTENT ROUTER</span>
+              <h3>Smart Conditional Retrieval</h3>
+              <p>
+                Casual greetings, math calculations, and time queries are handled
+                instantly without touching SQLite or wasting LLM tokens.
+              </p>
+            </article>
+
+            <article class="surface-card bento-feature span-4">
+              <div class="feature-icon-box amber">
+                <i data-lucide="braces" class="icon-md"></i>
+              </div>
+              <span class="mono-label">STRUCTURED EXTRACTION</span>
+              <h3>Strict JSON Schema Output</h3>
+              <p>
+                Extracts normalized entities, people, events, dates, deadlines,
+                actions, and ₹/$ amounts directly into relational SQLite tables.
+              </p>
+            </article>
+
+            <article class="surface-card bento-feature span-4">
+              <div class="feature-icon-box rose">
+                <i data-lucide="lock" class="icon-md"></i>
+              </div>
+              <span class="mono-label">SECURITY BOUNDARY</span>
+              <h3>Prompt-Injection Defense</h3>
+              <p>
+                Document contents are strictly sandboxed as untrusted data, preventing
+                malicious instructions inside PDFs or notes from hijacking prompts.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODULE 4: END-TO-END ARCHITECTURE PIPELINE -->
+      <section class="landing-section" id="pipeline-section">
+        <div class="section-container">
+          <div class="section-title-block">
+            <span class="mono-label">SYSTEM PIPELINE</span>
+            <h2>From raw filesystem to grounded intelligence.</h2>
+          </div>
+
+          <div class="pipeline-steps-grid">
+            <div class="surface-card pipe-step-card">
+              <div class="step-num">01</div>
+              <h4>FolderScanner & SHA-256</h4>
+              <p>
+                Discovers `.pdf`, `.png`, `.jpg`, `.txt`, `.md`, `.csv`, and `.json`
+                files and computes cryptographic hashes to detect modifications.
+              </p>
+              <span class="mono-label">backend/ingestion/scanner.py</span>
+            </div>
+
+            <div class="surface-card pipe-step-card">
+              <div class="step-num">02</div>
+              <h4>AIAnalyzer & AIClient</h4>
+              <p>
+                Sends new or modified files to Gemini 2.5 Flash with strict JSON schema
+                enforcement to extract events, deadlines, actions, and amounts.
+              </p>
+              <span class="mono-label">backend/ai/analyzer.py</span>
+            </div>
+
+            <div class="surface-card pipe-step-card">
+              <div class="step-num">03</div>
+              <h4>SQLite Relational Graph</h4>
+              <p>
+                Persists files, structured contexts, entities, and cross-document
+                relationships (`same_topic`, confidence scores, shared entities).
+              </p>
+              <span class="mono-label">backend/database/database.py</span>
+            </div>
+
+            <div class="surface-card pipe-step-card">
+              <div class="step-num">04</div>
+              <h4>Intent & Query Synthesis</h4>
+              <p>
+                Classifies user intent, scores relevant records, deduplicates facts,
+                and returns natural-language answers with separated source citations.
+              </p>
+              <span class="mono-label">backend/services/query_service.py</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MODULE 5: WORKSPACE MODULE LAUNCHER -->
+      <section class="landing-section" id="workspace-modules">
+        <div class="section-container">
+          <div class="section-title-block">
+            <span class="mono-label">7 SPECIALIZED WORKSPACE MODULES</span>
+            <h2>Jump directly into any module.</h2>
+            <p>Click any module below to launch directly into that workspace view.</p>
+          </div>
+
+          <div class="module-launcher-grid">
+            <button class="surface-card module-launch-card" data-nav-target="dashboard" type="button">
+              <i data-lucide="layout-dashboard" class="icon-md indigo-text"></i>
+              <strong>01. Command Overview</strong>
+              <span>KPI metrics, live mini-graph, priority radar & quick ask</span>
+            </button>
+
+            <button class="surface-card module-launch-card" data-nav-target="ask" type="button">
+              <i data-lucide="sparkles" class="icon-md violet-text"></i>
+              <strong>02. Ask AI Studio</strong>
+              <span>Conversational synthesis with confidence & source verification</span>
+            </button>
+
+            <button class="surface-card module-launch-card" data-nav-target="actions" type="button">
+              <i data-lucide="check-square" class="icon-md amber-text"></i>
+              <strong>03. Action & Deadline Board</strong>
+              <span>4-column Kanban matrix for tasks, dates, completed items & fees</span>
+            </button>
+
+            <button class="surface-card module-launch-card" data-nav-target="graph" type="button">
+              <i data-lucide="network" class="icon-md cyan-text"></i>
+              <strong>04. Synaptic Knowledge Graph</strong>
+              <span>Interactive force-directed canvas with node drag & file peek</span>
+            </button>
+
+            <button class="surface-card module-launch-card" data-nav-target="files" type="button">
+              <i data-lucide="folder-kanban" class="icon-md emerald-text"></i>
+              <strong>05. Vault Files Registry</strong>
+              <span>Searchable SHA-256 file cards with status & size telemetry</span>
+            </button>
+
+            <button class="surface-card module-launch-card" data-nav-target="explorer" type="button">
+              <i data-lucide="database" class="icon-md rose-text"></i>
+              <strong>06. Deep Context Explorer</strong>
+              <span>Category-filtered entity cloud and structured schema cards</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="landing-footer">
+        <div class="section-container footer-inner">
+          <div class="footer-brand">
+            <div class="brand-mark">
+              <i data-lucide="layers" class="icon-sm"></i>
+            </div>
+            <span><strong>ContextVault</strong> · Built by Team LASK (Learn, Adapt, Solve, Create)</span>
+          </div>
+          <div class="footer-actions">
+            <button class="btn btn-primary btn-sm" data-nav-target="dashboard" type="button">
+              <span>Open Workspace App</span>
+              <i data-lucide="arrow-right" class="icon-xs"></i>
+            </button>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- =====================================================================
+         SHELL 2: 7-VIEW WORKSPACE APPLICATION
+         ===================================================================== -->
+    <div id="workspaceShell" class="app-layout">
+      <!-- FIXED FLOATING SIDEBAR (ZERO SCROLLBAR) -->
+      <aside class="sidebar" aria-label="Primary Navigation">
+        <div class="sidebar-top">
+          <div class="sidebar-brand-row">
+            <a href="#/welcome" class="sidebar-brand" title="Back to Product Landing Page">
+              <div class="brand-mark">
+                <i data-lucide="layers" class="icon-md"></i>
+              </div>
+              <div class="brand-text">
+                <div class="brand-title-row">
+                  <h1>ContextVault</h1>
+                  <span class="version-pill">v0.2</span>
+                </div>
+                <p class="eyebrow">CONTEXT ENGINE</p>
+              </div>
+            </a>
+          </div>
+
+          <button class="cmd-search-trigger" id="openCmdPaletteBtn" type="button">
+            <span class="cmd-search-left">
+              <i data-lucide="search" class="icon-sm"></i>
+              <span>Quick Jump...</span>
+            </span>
+            <kbd>Ctrl K</kbd>
+          </button>
+        </div>
+
+        <div class="sidebar-nav-container">
+          <div class="nav-group">
+            <span class="nav-group-label">PRODUCT</span>
+            <nav class="side-nav">
+              <a href="#/welcome" class="nav-item" data-route="welcome">
+                <span class="nav-item-left">
+                  <i data-lucide="home" class="nav-svg"></i>
+                  <span>Product Home</span>
+                </span>
+                <span class="nav-count">Hero</span>
+              </a>
+            </nav>
+          </div>
+
+          <div class="nav-group">
+            <span class="nav-group-label">WORKSPACE</span>
+            <nav class="side-nav" id="mainNav">
+              <a href="#/dashboard" class="nav-item active" data-route="dashboard">
+                <span class="nav-item-left">
+                  <i data-lucide="layout-dashboard" class="nav-svg"></i>
+                  <span>Overview</span>
+                </span>
+                <span class="nav-count" id="navBadgeDashboard">Live</span>
+              </a>
+              <a href="#/ask" class="nav-item" data-route="ask">
+                <span class="nav-item-left">
+                  <i data-lucide="sparkles" class="nav-svg"></i>
+                  <span>Ask AI Studio</span>
+                </span>
+                <span class="nav-count accent">AI</span>
+              </a>
+              <a href="#/actions" class="nav-item" data-route="actions">
+                <span class="nav-item-left">
+                  <i data-lucide="check-square" class="nav-svg"></i>
+                  <span>Action Board</span>
+                </span>
+                <span class="nav-count warning" id="navBadgeActions">0</span>
+              </a>
+              <a href="#/graph" class="nav-item" data-route="graph">
+                <span class="nav-item-left">
+                  <i data-lucide="network" class="nav-svg"></i>
+                  <span>Knowledge Graph</span>
+                </span>
+                <span class="nav-count" id="navBadgeGraph">0</span>
+              </a>
+            </nav>
+          </div>
+
+          <div class="nav-group">
+            <span class="nav-group-label">REPOSITORY</span>
+            <nav class="side-nav">
+              <a href="#/files" class="nav-item" data-route="files">
+                <span class="nav-item-left">
+                  <i data-lucide="folder-kanban" class="nav-svg"></i>
+                  <span>Vault Files</span>
+                </span>
+                <span class="nav-count" id="navBadgeFiles">0</span>
+              </a>
+              <a href="#/explorer" class="nav-item" data-route="explorer">
+                <span class="nav-item-left">
+                  <i data-lucide="database" class="nav-svg"></i>
+                  <span>Context Explorer</span>
+                </span>
+                <span class="nav-count" id="navBadgeContext">0</span>
+              </a>
+              <a href="#/telemetry" class="nav-item" data-route="telemetry">
+                <span class="nav-item-left">
+                  <i data-lucide="activity" class="nav-svg"></i>
+                  <span>Links & Telemetry</span>
+                </span>
+                <span class="nav-count" id="navBadgeTelemetry">0</span>
+              </a>
+            </nav>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="vault-status-card">
+            <div class="vault-status-header">
+              <span class="status-indicator" id="aiHealthDot"></span>
+              <span class="mono-label" id="aiModelReadout">Gemini 2.5 Flash</span>
+            </div>
+            <div class="vault-path-display" id="sidebarFolderReadout" title="Active Vault Path">
+              <i data-lucide="folder" class="icon-xs"></i>
+              <span id="sidebarFolderText">.test</span>
+            </div>
+            <div class="vault-status-hint">
+              <i data-lucide="mouse-pointer-click" class="icon-xs"></i>
+              <span>Hover any file to peek · Click to inspect</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- MAIN WORKSPACE STAGE -->
+      <div class="main-wrapper">
+        <!-- FLOATING GLASS NAVBAR -->
+        <header class="floating-navbar">
+          <div class="navbar-left">
+            <span class="mono-label" id="currentViewEyebrow">WORKSPACE / OVERVIEW</span>
+            <h2 id="currentViewTitle">Overview</h2>
+          </div>
+
+          <div class="navbar-center">
+            <div class="scan-bar">
+              <span class="scan-bar-prefix" title="Local directory path">
+                <i data-lucide="folder-search" class="icon-sm"></i>
+              </span>
+              <input
+                id="folderPath"
+                type="text"
+                placeholder="Enter local folder path (e.g., .test)"
+                value=".test"
+                spellcheck="false"
+              />
+              <button id="scanBtn" class="btn btn-primary" type="button">
+                <i data-lucide="scan-line" class="icon-sm"></i>
+                <span id="scanBtnLabel">Scan Folder</span>
+              </button>
+              <button
+                id="refreshBtn"
+                class="btn btn-icon-only"
+                type="button"
+                title="Sync Vault State"
+              >
+                <i data-lucide="refresh-cw" class="icon-sm"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="navbar-right">
+            <div class="status-pill">
+              <span class="status-dot-pulse" id="scanPulse"></span>
+              <span id="statusText">Ready</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- WORKSPACE VIEWS -->
+        <main class="view-container">
+          <!-- VIEW 1: OVERVIEW (DASHBOARD) -->
+          <section class="view-page active" id="view-dashboard">
+            <div class="overview-hero-grid">
+              <div class="surface-card hero-banner">
+                <div class="hero-badges">
+                  <span class="badge badge-indigo">
+                    <i data-lucide="shield-check" class="icon-xs"></i>
+                    SHA-256 Incremental
+                  </span>
+                  <span class="badge badge-emerald">
+                    <i data-lucide="check-circle-2" class="icon-xs"></i>
+                    Grounded Citations
+                  </span>
+                </div>
+                <h3>Scattered files, reconstructed into structured understanding.</h3>
+                <p>
+                  ContextVault scans your local documents, extracts entities, deadlines,
+                  payments, and pending tasks, and maps cross-file relationships automatically.
+                </p>
+                <div class="hero-btn-row">
+                  <button class="btn btn-primary" data-nav-target="ask" type="button">
+                    <i data-lucide="sparkles" class="icon-sm"></i>
+                    <span>Ask AI Studio</span>
+                  </button>
+                  <button class="btn btn-secondary" data-nav-target="actions" type="button">
+                    <i data-lucide="list-todo" class="icon-sm"></i>
+                    <span>Action Board</span>
+                  </button>
+                  <button class="btn btn-ghost" data-nav-target="welcome" type="button">
+                    <i data-lucide="presentation" class="icon-sm"></i>
+                    <span>View Product Landing Page</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="surface-card quick-query-card">
+                <div class="card-top-row">
+                  <span class="mono-label">INSTANT SYNTHESIS</span>
+                  <span class="badge badge-subtle">
+                    <i data-lucide="cpu" class="icon-xs"></i>
+                    Context-Aware
+                  </span>
+                </div>
+                <h4>Ask your vault directly</h4>
+                <div class="quick-input-group">
+                  <input
+                    type="text"
+                    id="dashboardQuickInput"
+                    placeholder="What do I still need to complete?"
+                  />
+                  <button id="dashboardQuickAskBtn" class="btn btn-primary" type="button">
+                    <span>Ask</span>
+                    <i data-lucide="arrow-right" class="icon-sm"></i>
+                  </button>
+                </div>
+                <div class="chip-group">
+                  <button class="suggestion-chip" data-query="What do I still need to complete?">
+                    Pending tasks
+                  </button>
+                  <button class="suggestion-chip" data-query="What is Annual Tech Symposium?">
+                    What is Tech Symposium?
+                  </button>
+                  <button class="suggestion-chip" data-query="How much have I paid?">
+                    Payments made
+                  </button>
+                  <button class="suggestion-chip" data-query="When is my math exam?">
+                    Math exam date
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6-Column KPI Strip -->
+            <div class="kpi-grid">
+              <article class="surface-card kpi-card" data-nav-target="files">
+                <div class="kpi-header">
+                  <span class="kpi-label">Indexed Files</span>
+                  <i data-lucide="file-stack" class="kpi-icon"></i>
+                </div>
+                <strong class="kpi-value" id="fileCount">0</strong>
+                <span class="kpi-meta" id="fileSubtext">0 analyzed · 0 failed</span>
+              </article>
+
+              <article class="surface-card kpi-card" data-nav-target="explorer">
+                <div class="kpi-header">
+                  <span class="kpi-label">Context Records</span>
+                  <i data-lucide="braces" class="kpi-icon"></i>
+                </div>
+                <strong class="kpi-value" id="contextCount">0</strong>
+                <span class="kpi-meta">Structured JSON schemas</span>
+              </article>
+
+              <article class="surface-card kpi-card" data-nav-target="telemetry">
+                <div class="kpi-header">
+                  <span class="kpi-label">Synaptic Links</span>
+                  <i data-lucide="git-compare" class="kpi-icon"></i>
+                </div>
+                <strong class="kpi-value" id="relationshipCount">0</strong>
+                <span class="kpi-meta">Cross-file relationships</span>
+              </article>
+
+              <article class="surface-card kpi-card kpi-amber" data-nav-target="actions">
+                <div class="kpi-header">
+                  <span class="kpi-label">Pending Actions</span>
+                  <i data-lucide="clock" class="kpi-icon"></i>
+                </div>
+                <strong class="kpi-value" id="actionCount">0</strong>
+                <span class="kpi-meta" id="deadlineSubtext">0 active deadlines</span>
+              </article>
+
+              <article class="surface-card kpi-card kpi-indigo" data-nav-target="explorer">
+                <div class="kpi-header">
+                  <span class="kpi-label">Extracted Entities</span>
+                  <i data-lucide="tags" class="kpi-icon"></i>
+                </div>
+                <strong class="kpi-value" id="entityCount">0</strong>
+                <span class="kpi-meta">Events, people & orgs</span>
+              </article>
+
+              <article class="surface-card kpi-card kpi-emerald" data-nav-target="actions">
+                <div class="kpi-header">
+                  <span class="kpi-label">Documented Amounts</span>
+                  <i data-lucide="indian-rupee" class="kpi-icon"></i>
+                </div>
+                <strong class="kpi-value" id="amountCount">0</strong>
+                <span class="kpi-meta" id="amountPreviewSub">Fees & receipts</span>
+              </article>
+            </div>
+
+            <!-- Main 2x2 Bento Split -->
+            <div class="overview-bento">
+              <article class="surface-card bento-item">
+                <div class="section-header">
+                  <div>
+                    <span class="mono-label">PRIORITY RADAR</span>
+                    <h3>Action Items & Deadlines</h3>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" data-nav-target="actions" type="button">
+                    <span>Open Board</span>
+                    <i data-lucide="arrow-up-right" class="icon-xs"></i>
+                  </button>
+                </div>
+                <div id="dashboardActionFeed" class="card-list-scroll"></div>
+              </article>
+
+              <article class="surface-card bento-item">
+                <div class="section-header">
+                  <div>
+                    <span class="mono-label">KNOWLEDGE TOPOLOGY</span>
+                    <h3>Live Context Graph</h3>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" data-nav-target="graph" type="button">
+                    <span>Full Canvas</span>
+                    <i data-lucide="maximize-2" class="icon-xs"></i>
+                  </button>
+                </div>
+                <div class="mini-canvas-box">
+                  <canvas id="miniGraphCanvas" width="640" height="280"></canvas>
+                  <div class="canvas-legend">
+                    <span><i class="dot-ind file"></i>File</span>
+                    <span><i class="dot-ind event"></i>Event / Deadline</span>
+                    <span><i class="dot-ind action"></i>Task</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="surface-card bento-item">
+                <div class="section-header">
+                  <div>
+                    <span class="mono-label">RECENTLY INDEXED</span>
+                    <h3>Vault Files</h3>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" data-nav-target="files" type="button">
+                    <span>All Files</span>
+                    <i data-lucide="arrow-up-right" class="icon-xs"></i>
+                  </button>
+                </div>
+                <ul id="dashboardFileList" class="clean-list"></ul>
+              </article>
+
+              <article class="surface-card bento-item">
+                <div class="section-header">
+                  <div>
+                    <span class="mono-label">CROSS-DOCUMENT LINKS</span>
+                    <h3>Discovered Relationships</h3>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" data-nav-target="telemetry" type="button">
+                    <span>Details</span>
+                    <i data-lucide="arrow-up-right" class="icon-xs"></i>
+                  </button>
+                </div>
+                <div id="dashboardRelationshipList" class="card-list-scroll"></div>
+              </article>
+            </div>
+          </section>
+
+          <!-- VIEW 2: ASK AI STUDIO -->
+          <section class="view-page" id="view-ask">
+            <div class="studio-grid">
+              <div class="surface-card chat-pane">
+                <div class="section-header border-bottom">
+                  <div>
+                    <span class="mono-label">REASONING ENGINE</span>
+                    <h3>Conversational Synthesis</h3>
+                  </div>
+                  <button id="clearChatBtn" class="btn btn-ghost btn-sm" type="button">
+                    <i data-lucide="trash-2" class="icon-xs"></i>
+                    <span>Clear Thread</span>
+                  </button>
+                </div>
+
+                <div class="studio-suggestions">
+                  <span class="mono-label">TRY ASKING:</span>
+                  <button class="suggestion-chip" data-query="What things do I need to complete by 30 Sept 2026?">
+                    Tasks due by 30 Sept 2026
+                  </button>
+                  <button class="suggestion-chip" data-query="What is Annual Tech Symposium?">
+                    What is Annual Tech Symposium?
+                  </button>
+                  <button class="suggestion-chip" data-query="When is my math exam?">
+                    When is my math exam?
+                  </button>
+                  <button class="suggestion-chip" data-query="What time is it, and what deadlines do I have?">
+                    Current time + deadlines
+                  </button>
+                </div>
+
+                <div class="chat-messages" id="chatStream"></div>
+
+                <div class="chat-input-bar">
+                  <input
+                    id="queryInput"
+                    type="text"
+                    placeholder="Ask about your files, tasks, deadlines, or general questions..."
+                    autocomplete="off"
+                  />
+                  <button id="queryBtn" class="btn btn-primary" type="button">
+                    <i data-lucide="send" class="icon-sm"></i>
+                    <span>Ask Vault</span>
+                  </button>
+                </div>
+              </div>
+
+              <aside class="surface-card evidence-pane">
+                <div class="section-header border-bottom">
+                  <div>
+                    <span class="mono-label">VERIFICATION LAYER</span>
+                    <h3>Grounding & Evidence</h3>
+                  </div>
+                </div>
+
+                <div class="grounding-meter">
+                  <div class="grounding-meter-top">
+                    <span>Reasoning Confidence</span>
+                    <strong id="answerConfidenceBadge">—</strong>
+                  </div>
+                  <div class="meter-bar-bg">
+                    <div class="meter-bar-fill" id="answerConfidenceBar" style="width: 0%"></div>
+                  </div>
+                  <div class="grounding-pills">
+                    <span class="badge badge-subtle" id="contextSufficiencyBadge">Awaiting query</span>
+                    <span class="badge badge-subtle" id="sourceCountBadge">0 Sources</span>
+                  </div>
+                </div>
+
+                <div class="evidence-sources-block">
+                  <div class="evidence-block-header">
+                    <span class="mono-label">ATTRIBUTED SOURCES</span>
+                    <small>Hover to peek · Click to inspect</small>
+                  </div>
+                  <ul id="sourcesList" class="clean-list"></ul>
+                </div>
+
+                <div class="latest-answer-card">
+                  <span class="mono-label">LATEST RESPONSE SNAPSHOT</span>
+                  <p id="answerText">No answer yet. Ask a question to synthesize your vault.</p>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <!-- VIEW 3: KNOWLEDGE GRAPH -->
+          <section class="view-page" id="view-graph">
+            <div class="surface-card graph-workspace">
+              <div class="section-header border-bottom">
+                <div>
+                  <span class="mono-label">INTERACTIVE FORCE-DIRECTED TOPOLOGY</span>
+                  <h3>Synaptic Knowledge Graph</h3>
+                </div>
+                <div class="toolbar-actions">
+                  <select id="graphFilterSelect" class="input-select">
+                    <option value="all">All Nodes (Files + Entities + Tasks)</option>
+                    <option value="files_only">Files & File Links Only</option>
+                    <option value="events">Files + Events & Deadlines</option>
+                    <option value="actions">Files + Pending Actions</option>
+                  </select>
+                  <button id="graphResetBtn" class="btn btn-secondary btn-sm" type="button">
+                    <i data-lucide="focus" class="icon-xs"></i>
+                    <span>Re-center</span>
+                  </button>
+                  <button id="graphPhysicsBtn" class="btn btn-ghost btn-sm" type="button">
+                    <i data-lucide="pause" class="icon-xs"></i>
+                    <span id="graphPhysicsLabel">Pause Motion</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="full-canvas-container">
+                <canvas id="fullGraphCanvas" width="1280" height="660"></canvas>
+                <div class="graph-floating-hud">
+                  <div class="mono-label">INTERACTION GUIDE</div>
+                  <ul>
+                    <li><strong>Drag</strong> nodes to reorganize layout</li>
+                    <li><strong>Hover</strong> any node to preview source file</li>
+                    <li><strong>Click</strong> any node to open Deep Inspector</li>
+                  </ul>
+                  <div class="hud-counter" id="graphHudStats">0 Nodes · 0 Edges</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 4: VAULT FILES -->
+          <section class="view-page" id="view-files">
+            <div class="surface-card">
+              <div class="section-header border-bottom">
+                <div>
+                  <span class="mono-label">SHA-256 CONTENT REGISTRY</span>
+                  <h3>Indexed Vault Files</h3>
+                </div>
+                <div class="toolbar-actions">
+                  <input
+                    type="search"
+                    id="fileSearchInput"
+                    class="input-text"
+                    placeholder="Search filename, extension, hash..."
+                  />
+                  <select id="fileStatusFilter" class="input-select">
+                    <option value="all">All Statuses</option>
+                    <option value="analyzed">Analyzed</option>
+                    <option value="processing">Processing</option>
+                    <option value="changed">Changed</option>
+                    <option value="failed">Failed</option>
+                  </select>
+                </div>
+              </div>
+
+              <ul id="fileList" class="files-grid"></ul>
+            </div>
+          </section>
+
+          <!-- VIEW 5: CONTEXT EXPLORER -->
+          <section class="view-page" id="view-explorer">
+            <div class="surface-card explorer-header-card">
+              <div class="section-header">
+                <div>
+                  <span class="mono-label">STRUCTURED SCHEMA BROWSER</span>
+                  <h3>Extracted Context & Entities</h3>
+                </div>
+                <div class="toolbar-actions">
+                  <input
+                    type="search"
+                    id="contextSearchInput"
+                    class="input-text"
+                    placeholder="Filter entities, deadlines, facts, amounts..."
+                  />
+                </div>
+              </div>
+
+              <div class="segmented-tabs" id="entityCategoryTabs">
+                <button class="seg-tab active" data-cat="all" type="button">All Fields</button>
+                <button class="seg-tab" data-cat="events" type="button">Events</button>
+                <button class="seg-tab" data-cat="deadlines" type="button">Deadlines</button>
+                <button class="seg-tab" data-cat="actions" type="button">Actions</button>
+                <button class="seg-tab" data-cat="amounts" type="button">Amounts</button>
+                <button class="seg-tab" data-cat="people" type="button">People</button>
+                <button class="seg-tab" data-cat="organizations" type="button">Organizations</button>
+                <button class="seg-tab" data-cat="dates" type="button">Dates</button>
+                <button class="seg-tab" data-cat="important_facts" type="button">Facts</button>
+              </div>
+
+              <div id="entityPillsCloud" class="entity-tag-cloud"></div>
+            </div>
+
+            <div id="contextList" class="context-cards-grid"></div>
+          </section>
+
+          <!-- VIEW 6: ACTION & DEADLINE BOARD -->
+          <section class="view-page" id="view-actions">
+            <div class="kanban-board">
+              <div class="surface-card kanban-column">
+                <div class="kanban-col-header amber">
+                  <span class="kanban-title-left">
+                    <i data-lucide="zap" class="icon-sm"></i>
+                    <span>Pending Actions</span>
+                  </span>
+                  <span class="kanban-count" id="matrixPendingCount">0</span>
+                </div>
+                <div id="matrixPendingList" class="kanban-list"></div>
+              </div>
+
+              <div class="surface-card kanban-column">
+                <div class="kanban-col-header rose">
+                  <span class="kanban-title-left">
+                    <i data-lucide="calendar-clock" class="icon-sm"></i>
+                    <span>Deadlines & Dates</span>
+                  </span>
+                  <span class="kanban-count" id="matrixDeadlineCount">0</span>
+                </div>
+                <div id="matrixDeadlineList" class="kanban-list"></div>
+              </div>
+
+              <div class="surface-card kanban-column">
+                <div class="kanban-col-header emerald">
+                  <span class="kanban-title-left">
+                    <i data-lucide="check-circle" class="icon-sm"></i>
+                    <span>Completed & Verified</span>
+                  </span>
+                  <span class="kanban-count" id="matrixCompletedCount">0</span>
+                </div>
+                <div id="matrixCompletedList" class="kanban-list"></div>
+              </div>
+
+              <div class="surface-card kanban-column">
+                <div class="kanban-col-header indigo">
+                  <span class="kanban-title-left">
+                    <i data-lucide="wallet" class="icon-sm"></i>
+                    <span>Documented Amounts</span>
+                  </span>
+                  <span class="kanban-count" id="matrixAmountCount">0</span>
+                </div>
+                <div id="matrixAmountList" class="kanban-list"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 7: LINKS & TELEMETRY -->
+          <section class="view-page" id="view-telemetry">
+            <div class="telemetry-split">
+              <article class="surface-card">
+                <div class="section-header border-bottom">
+                  <div>
+                    <span class="mono-label">SYNAPTIC CONNECTIONS</span>
+                    <h3>Cross-Document Relationships</h3>
+                  </div>
+                </div>
+                <div id="relationshipList" class="clean-list"></div>
+              </article>
+
+              <article class="surface-card">
+                <div class="section-header border-bottom">
+                  <div>
+                    <span class="mono-label">ENGINE DIAGNOSTICS</span>
+                    <h3>System Telemetry & Error Log</h3>
+                  </div>
+                </div>
+                <div id="systemTelemetryBox" class="telemetry-summary"></div>
+                <h4 class="Block-subtitle">Processing Fault Log</h4>
+                <div id="errorLogList" class="clean-list"></div>
+              </article>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- ==================== HOVER QUICK-PEEK POPOVER ==================== -->
+    <div id="fileHoverCard" class="hover-peek-card hidden" role="tooltip">
+      <div class="peek-header">
+        <span class="peek-ext" id="hoverExt">.TXT</span>
+        <div class="peek-title">
+          <strong id="hoverFilename">document.txt</strong>
+          <span id="hoverHash">SHA256: —</span>
+        </div>
+        <span class="pill analyzed" id="hoverStatus">analyzed</span>
+      </div>
+      <p class="peek-summary" id="hoverSummary">Loading summary...</p>
+      <div class="peek-tags" id="hoverTags"></div>
+      <div class="peek-code-preview" id="hoverRawSnippet">Loading file preview...</div>
+      <div class="peek-footer">
+        <span>Click to open Full File Inspector</span>
+        <span>⤢</span>
+      </div>
+    </div>
+
+    <!-- ==================== DEEP FILE INSPECTOR DRAWER ==================== -->
+    <div id="fileInspectorBackdrop" class="drawer-backdrop hidden">
+      <aside class="inspector-drawer" aria-label="File Inspector">
+        <header class="drawer-header">
+          <div>
+            <span class="mono-label" id="inspectorEyebrow">FILE INSPECTOR</span>
+            <h3 id="inspectorFilename">document.txt</h3>
+          </div>
+          <div class="drawer-actions">
+            <a
+              id="inspectorRawLink"
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="btn btn-secondary btn-sm"
+            >
+              <span>Open Raw</span>
+              <i data-lucide="external-link" class="icon-xs"></i>
+            </a>
+            <button id="closeInspectorBtn" class="btn btn-ghost btn-sm" type="button">
+              <i data-lucide="x" class="icon-xs"></i>
+              <span>Esc</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="drawer-meta-bar" id="inspectorMetaStrip"></div>
+
+        <div class="drawer-tabs">
+          <button class="drawer-tab active" data-insp-tab="preview" type="button">
+            File Content
+          </button>
+          <button class="drawer-tab" data-insp-tab="structured" type="button">
+            Extracted Context
+          </button>
+          <button class="drawer-tab" data-insp-tab="connections" type="button">
+            Linked Files
+          </button>
+          <button class="drawer-tab" data-insp-tab="json" type="button">
+            Raw JSON
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          <div class="insp-pane active" id="insp-pane-preview">
+            <div id="inspectorPreviewContainer" class="preview-box"></div>
+          </div>
+          <div class="insp-pane" id="insp-pane-structured">
+            <div id="inspectorStructuredContainer" class="clean-list"></div>
+          </div>
+          <div class="insp-pane" id="insp-pane-connections">
+            <div id="inspectorConnectionsContainer" class="clean-list"></div>
+          </div>
+          <div class="insp-pane" id="insp-pane-json">
+            <pre id="inspectorJsonPre" class="json-code-block"></pre>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ==================== COMMAND PALETTE (CTRL+K) ==================== -->
+    <div id="cmdPaletteBackdrop" class="modal-backdrop hidden">
+      <div class="cmd-palette-modal">
+        <div class="cmd-palette-header">
+          <i data-lucide="search" class="icon-sm"></i>
+          <input
+            type="text"
+            id="cmdInput"
+            placeholder="Type a command, jump to a view, or inspect a file..."
+            autocomplete="off"
+          />
+          <kbd id="closeCmdBtn">ESC</kbd>
+        </div>
+        <div id="cmdResults" class="cmd-palette-results"></div>
+      </div>
+    </div>
+
+    <!-- ==================== TOAST CONTAINER ==================== -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
