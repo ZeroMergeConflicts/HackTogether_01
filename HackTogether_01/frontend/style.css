@@ -3380,10 +3380,114 @@ select:focus-visible {
 }
 
 #view-dashboard .quick-query-card {
+  position: relative;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 22px;
+  overflow: hidden;
   border-top: 3px solid #087e9b;
   background:
-    radial-gradient(ellipse at 100% 0%, rgba(8, 126, 155, 0.09), transparent 46%),
+    radial-gradient(ellipse at 100% 0%, rgba(8, 126, 155, 0.12), transparent 48%),
+    radial-gradient(ellipse at 0% 100%, rgba(20, 184, 166, 0.06), transparent 48%),
     rgba(255, 255, 255, 0.94);
+}
+
+#view-dashboard .quick-query-card .card-top-row {
+  min-height: 25px;
+}
+
+#view-dashboard .quick-query-card .badge-subtle {
+  background: rgba(255, 255, 255, 0.84);
+  border-color: rgba(31, 73, 64, 0.12);
+  color: #425b56;
+}
+
+#view-dashboard .quick-query-card h4 {
+  margin: 0;
+  color: #183a35;
+  font-size: 1.28rem;
+  line-height: 1.25;
+}
+
+#view-dashboard .quick-input-group {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0;
+  padding: 4px;
+  border: 1px solid rgba(31, 73, 64, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 5px 16px rgba(28, 58, 51, 0.06);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+#view-dashboard .quick-input-group:focus-within {
+  border-color: rgba(15, 118, 110, 0.58);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1), 0 8px 20px rgba(28, 58, 51, 0.08);
+}
+
+.quick-query-search-icon {
+  display: grid;
+  place-items: center;
+  color: #667773;
+}
+
+#view-dashboard .quick-input-group input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #203b37;
+  font-size: 0.82rem;
+}
+
+#view-dashboard .quick-input-group input:focus-visible {
+  outline: none;
+}
+
+#view-dashboard .quick-input-group input::placeholder {
+  color: #667773;
+  opacity: 1;
+}
+
+#view-dashboard .quick-input-group .btn {
+  min-height: 42px;
+  padding-inline: 13px;
+  border-radius: 8px;
+}
+
+#view-dashboard .quick-query-card .chip-group {
+  gap: 7px;
+}
+
+.quick-query-suggestions-label {
+  flex-basis: 100%;
+  margin-bottom: 1px;
+  color: #526664;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+#view-dashboard .quick-query-card .suggestion-chip {
+  padding: 6px 9px;
+  border: 1px solid rgba(31, 73, 64, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #425b56;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+#view-dashboard .quick-query-card .suggestion-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(15, 118, 110, 0.32);
+  background: #fff;
+  color: #155e58;
+  box-shadow: 0 4px 12px rgba(28, 58, 51, 0.08);
 }
 
 #view-dashboard .kpi-card {

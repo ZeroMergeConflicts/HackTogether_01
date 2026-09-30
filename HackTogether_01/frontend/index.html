@@ -776,19 +776,24 @@ Files found:
                     Context-Aware
                   </span>
                 </div>
-                <h4>Ask your vault directly</h4>
+                <h4>What would you like to know?</h4>
                 <div class="quick-input-group">
+                  <span class="quick-query-search-icon" aria-hidden="true">
+                    <i data-lucide="search" class="icon-sm"></i>
+                  </span>
                   <input
                     type="text"
                     id="dashboardQuickInput"
-                    placeholder="What do I still need to complete?"
+                    aria-label="Ask your vault a question"
+                    placeholder="Ask about tasks, dates, payments..."
                   />
                   <button id="dashboardQuickAskBtn" class="btn btn-primary" type="button">
-                    <span>Ask</span>
+                    <span>Ask vault</span>
                     <i data-lucide="arrow-right" class="icon-sm"></i>
                   </button>
                 </div>
-                <div class="chip-group">
+                <div class="chip-group" aria-label="Suggested questions">
+                  <span class="quick-query-suggestions-label">Try a quick prompt</span>
                   <button class="suggestion-chip" data-query="What do I still need to complete?">
                     Pending tasks
                   </button>
