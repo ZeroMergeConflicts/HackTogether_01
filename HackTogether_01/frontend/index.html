@@ -205,6 +205,60 @@
         </div>
       </section>
 
+      <section class="answer-journey-section" id="answer-journey">
+        <div class="section-container">
+          <div class="journey-header">
+            <div>
+              <span class="mono-label">FOLLOW THE EVIDENCE</span>
+              <h2>See how a question becomes a sourced answer.</h2>
+            </div>
+            <p>Choose a step. The trail stays connected to the live demo above.</p>
+          </div>
+
+          <div class="journey-explorer" id="answerJourney" data-stage="sources">
+            <div class="journey-tabs" role="group" aria-label="Answer journey stages">
+              <button class="journey-tab active" data-journey-step="sources" aria-pressed="true" type="button">
+                <span class="journey-tab-index">01</span>
+                <span>Source files</span>
+                <i data-lucide="files" class="icon-sm"></i>
+              </button>
+              <button class="journey-tab" data-journey-step="connections" aria-pressed="false" type="button">
+                <span class="journey-tab-index">02</span>
+                <span>Connected context</span>
+                <i data-lucide="git-branch" class="icon-sm"></i>
+              </button>
+              <button class="journey-tab" data-journey-step="answer" aria-pressed="false" type="button">
+                <span class="journey-tab-index">03</span>
+                <span>Grounded answer</span>
+                <i data-lucide="badge-check" class="icon-sm"></i>
+              </button>
+            </div>
+
+            <div class="journey-stage">
+              <div class="journey-copy">
+                <span class="mono-label" id="journeyStageKicker">STEP 01 / SOURCES</span>
+                <h3 id="journeyStageTitle">Start with the original files.</h3>
+                <p id="journeyStageDescription">
+                  Every useful detail stays attached to the document it came from.
+                </p>
+                <button class="journey-next" id="journeyNextStep" type="button">
+                  <span id="journeyNextLabel">Connect the signals</span>
+                  <i data-lucide="arrow-right" class="icon-sm"></i>
+                </button>
+              </div>
+              <div class="journey-visual" id="journeyVisual" aria-live="polite" aria-atomic="true"></div>
+            </div>
+
+            <div class="journey-progress-row">
+              <span id="journeyDemoContext">Symposium demo · 2 source files</span>
+              <div class="journey-progress" role="progressbar" aria-label="Answer journey progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1">
+                <span id="journeyProgressFill"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- MODULE 2: RETRIEVAL VS. REASONING INTERACTIVE COMPARISON -->
       <section class="landing-section" id="comparison-section">
         <div class="section-container">
@@ -676,11 +730,28 @@ Files found:
                     Grounded Citations
                   </span>
                 </div>
-                <h3>Scattered files, reconstructed into structured understanding.</h3>
+                <h3>Your connected vault, focused on what matters.</h3>
                 <p>
                   ContextVault scans your local documents, extracts entities, deadlines,
                   payments, and pending tasks, and maps cross-file relationships automatically.
                 </p>
+                <div class="dashboard-focus-card" id="dashboardFocusCard" data-priority="clear">
+                  <span class="dashboard-focus-icon" aria-hidden="true">
+                    <i id="dashboardFocusIcon" data-lucide="sparkles" class="icon-md"></i>
+                  </span>
+                  <div class="dashboard-focus-copy">
+                    <div class="dashboard-focus-heading">
+                      <span class="mono-label" id="dashboardFocusLabel">VAULT FOCUS</span>
+                      <span class="dashboard-live-tag"><i data-lucide="activity" class="icon-xs"></i> LIVE</span>
+                    </div>
+                    <strong id="dashboardFocusText">Your highest-priority action will appear here.</strong>
+                    <div id="dashboardFocusSource" class="dashboard-focus-source"></div>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" id="dashboardFocusButton" data-nav-target="actions" type="button">
+                    <span>Review action board</span>
+                    <i data-lucide="arrow-up-right" class="icon-xs"></i>
+                  </button>
+                </div>
                 <div class="hero-btn-row">
                   <button class="btn btn-primary" data-nav-target="ask" type="button">
                     <i data-lucide="sparkles" class="icon-sm"></i>
@@ -705,19 +776,24 @@ Files found:
                     Context-Aware
                   </span>
                 </div>
-                <h4>Ask your vault directly</h4>
+                <h4>What would you like to know?</h4>
                 <div class="quick-input-group">
+                  <span class="quick-query-search-icon" aria-hidden="true">
+                    <i data-lucide="search" class="icon-sm"></i>
+                  </span>
                   <input
                     type="text"
                     id="dashboardQuickInput"
-                    placeholder="What do I still need to complete?"
+                    aria-label="Ask your vault a question"
+                    placeholder="Ask about tasks, dates, payments..."
                   />
                   <button id="dashboardQuickAskBtn" class="btn btn-primary" type="button">
-                    <span>Ask</span>
+                    <span>Ask vault</span>
                     <i data-lucide="arrow-right" class="icon-sm"></i>
                   </button>
                 </div>
-                <div class="chip-group">
+                <div class="chip-group" aria-label="Suggested questions">
+                  <span class="quick-query-suggestions-label">Try a quick prompt</span>
                   <button class="suggestion-chip" data-query="What do I still need to complete?">
                     Pending tasks
                   </button>
@@ -978,6 +1054,11 @@ Files found:
                     <li><strong>Hover</strong> any node to preview source file</li>
                     <li><strong>Click</strong> any node to open Deep Inspector</li>
                   </ul>
+                  <div class="graph-node-legend" aria-label="Graph node types">
+                    <span><i class="graph-key-dot file" aria-hidden="true"></i>Files</span>
+                    <span><i class="graph-key-dot event" aria-hidden="true"></i>Events</span>
+                    <span><i class="graph-key-dot action" aria-hidden="true"></i>Tasks</span>
+                  </div>
                   <div class="hud-counter" id="graphHudStats">0 Nodes · 0 Edges</div>
                 </div>
               </div>

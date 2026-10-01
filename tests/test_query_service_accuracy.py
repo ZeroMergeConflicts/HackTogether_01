@@ -1,0 +1,119 @@
+from __future__ import annotations
+
+import unittest
+from typing import Any, cast
+
+from HackTogether_01.backend.ai.analyzer import AIAnalyzer
+from HackTogether_01.backend.ai.client import AIClient
+from HackTogether_01.backend.database.database import DatabaseManager
+from HackTogether_01.backend.services.query_service import QueryService
+
+
+class FakeDatabase:
+    def __init__(self, contexts: list[dict[str, Any]]) -> None:
+        self.contexts = contexts
+
+    def get_context(self) -> list[dict[str, Any]]:
+        return self.contexts
+
+
+class FakeAIClient:
+    def __init__(self, response: dict[str, Any]) -> None:
+        self.response = response
+        self.calls = 0
+        self.last_prompt = ""
+        self.last_options: dict[str, Any] = {}
+
+    def is_configured(self) -> bool:
+        return True
+
+    def generate_json(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls += 1
+        self.last_prompt = str(kwargs.get("prompt", ""))
+        self.last_options = kwargs
+        return self.response
+
+
+class QueryServiceAccuracyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.context = {
+            "file_id": 1,
+            "filename": "project_deadline.txt",
+            "summary": "Project deadline",
+            "data": {
+                "deadlines": ["Project submission deadline is 30 September 2026"],
+            },
+        }
+
+    @staticmethod
+    def make_service(database: FakeDatabase, client: FakeAIClient) -> QueryService:
+        return QueryService(
+            cast(DatabaseManager, database),
+            cast(AIAnalyzer, object()),
+            cast(AIClient, client),
+        )
+
+    def test_personal_question_without_evidence_never_reaches_model(self) -> None:
+        client = FakeAIClient(
+            {
+                "answer": "Your passport number is X1234567.",
+                "confidence": 0.99,
+                "has_sufficient_context": True,
+                "relevant_file_ids": [123],
+            }
+        )
+        service = self.make_service(FakeDatabase([]), client)
+
+        result = service.answer_query("What is my passport number?")
+
+        self.assertEqual(client.calls, 0)
+        self.assertFalse(result["has_sufficient_context"])
+        self.assertEqual(result["sources"], [])
+        self.assertNotIn("X1234567", result["answer"])
+
+    def test_answer_with_unretrieved_source_id_uses_grounded_fallback(self) -> None:
+        client = FakeAIClient(
+            {
+                "answer": "The project is due next year.",
+                "confidence": 0.99,
+                "has_sufficient_context": True,
+                "relevant_file_ids": [999],
+            }
+        )
+        service = self.make_service(FakeDatabase([self.context]), client)
+
+        result = service.answer_query("When is my project deadline?")
+
+        self.assertNotIn("next year", result["answer"])
+        self.assertIn("30 September 2026", result["answer"])
+        self.assertEqual(
+            result["sources"],
+            [{"file_id": 1, "filename": "project_deadline.txt"}],
+        )
+
+    def test_valid_citation_is_kept_and_confidence_is_clamped(self) -> None:
+        client = FakeAIClient(
+            {
+                "answer": "The deadline is 30 September 2026.",
+                "confidence": 1.7,
+                "has_sufficient_context": True,
+                "relevant_file_ids": [1],
+            }
+        )
+        service = self.make_service(FakeDatabase([self.context]), client)
+
+        result = service.answer_query("When is my project deadline?")
+
+        self.assertEqual(result["confidence"], 1.0)
+        self.assertTrue(result["has_sufficient_context"])
+        self.assertEqual(result["sources"][0]["file_id"], 1)
+
+    def test_invalid_confidence_uses_conservative_default(self) -> None:
+        self.assertEqual(
+            QueryService._normalize_confidence(float("nan"), default=0.5),
+            0.5,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
