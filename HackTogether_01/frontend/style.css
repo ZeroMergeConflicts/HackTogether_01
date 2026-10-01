@@ -2504,7 +2504,7 @@ body[data-shell-mode="workspace"] #landingShell {
 
 .relation-item {
   display: grid;
-  grid-template-columns: 10px 1fr auto;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   padding: 14px;
@@ -3893,7 +3893,7 @@ select:focus-visible {
   .studio-grid,
   .kanban-board,
   .telemetry-split {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .span-8,
@@ -3903,5 +3903,66 @@ select:focus-visible {
 
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 360px) {
+  .app-layout {
+    padding-inline: 8px;
+  }
+
+  .view-page,
+  .view-page > *,
+  .view-page > * > * {
+    min-width: 0;
+  }
+
+  .telemetry-split > .surface-card,
+  .studio-grid > .surface-card,
+  .studio-grid > aside {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .relation-item {
+    grid-template-columns: 8px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .relation-item > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .relation-item > .confidence {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .relation-item .file-ref-chip {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  #view-ask .chat-input-bar input {
+    min-width: 0;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  .landing-navbar {
+    padding-inline: 14px;
+  }
+
+  .landing-nav-inner {
+    gap: 12px;
+    padding: 9px 14px;
+    border-radius: 18px;
+  }
+
+  .landing-nav-links,
+  #landingCmdBtn {
+    display: none;
   }
 }
