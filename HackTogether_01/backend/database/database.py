@@ -189,9 +189,7 @@ class DatabaseManager:
 
     def get_files(self) -> list[dict[str, Any]]:
         with self._connect() as connection:
-            rows = connection.execute(
-                "SELECT * FROM files ORDER BY id ASC"
-            ).fetchall()
+            rows = connection.execute("SELECT * FROM files ORDER BY id ASC").fetchall()
         return [dict(row) for row in rows]
 
     def get_file(self, file_id: int) -> dict[str, Any] | None:

@@ -234,11 +234,7 @@ class AIAnalyzer:
         if file_path.exists() and file_path.suffix.lower() in TEXT_EXTENSIONS:
             text = file_path.read_text(encoding="utf-8", errors="ignore").strip()
 
-        lines = [
-            line.strip().rstrip(".")
-            for line in text.splitlines()
-            if line.strip()
-        ]
+        lines = [line.strip().rstrip(".") for line in text.splitlines() if line.strip()]
         summary = lines[0][:140] if lines else f"Notes from {stem or file_path.name}"
 
         amounts = list(
@@ -263,7 +259,10 @@ class AIAnalyzer:
 
         events: list[str] = []
         for line in lines:
-            if any(w in line.lower() for w in ("symposium", "hackathon", "exam", "conference", "workshop")):
+            if any(
+                w in line.lower()
+                for w in ("symposium", "hackathon", "exam", "conference", "workshop")
+            ):
                 if len(line.split()) <= 7:
                     events.append(line)
         if not events and "symposium" in text.lower():
@@ -290,7 +289,13 @@ class AIAnalyzer:
                 )
             )
 
-            if any(w in lower for w in ("deadline", "closes on", "closes", "due on", "due by")) and not is_action_sentence:
+            if (
+                any(
+                    w in lower
+                    for w in ("deadline", "closes on", "closes", "due on", "due by")
+                )
+                and not is_action_sentence
+            ):
                 deadlines.append(line)
                 continue
 
@@ -322,7 +327,7 @@ class AIAnalyzer:
         if not important_facts and lines:
             important_facts = lines[:2]
 
-        entities = list(dict.fromkeys([*events, *( [stem] if stem else [] )]))
+        entities = list(dict.fromkeys([*events, *([stem] if stem else [])]))
 
         return {
             "summary": summary,

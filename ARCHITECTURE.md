@@ -549,8 +549,7 @@ backend/ingestion/scanner.py
 Class:
 
 ```python
-class FolderScanner:
-    ...
+class FolderScanner: ...
 ```
 
 Responsibilities:

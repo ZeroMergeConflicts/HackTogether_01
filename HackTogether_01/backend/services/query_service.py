@@ -52,18 +52,109 @@ Critical Rules for Personal Context Reasoning:
 """
 
 STOPWORDS = {
-    "a", "about", "all", "am", "an", "and", "any", "anything", "are", "as", "at",
-    "be", "been", "before", "by", "calculate", "can", "complete", "completed",
-    "context", "contextvault", "could", "did", "divided", "do", "does", "done",
-    "equals", "everything", "file", "files", "finish", "for", "from", "get",
-    "have", "hello", "help", "hey", "hi", "how", "i", "in", "important", "is",
-    "it", "left", "me", "minus", "multiply", "my", "need", "next", "now", "of",
-    "on", "or", "our", "pending", "please", "plus", "remaining", "should", "so",
-    "status", "still", "summarize", "summary", "task", "tasks", "tell", "that",
-    "the", "their", "there", "these", "they", "thing", "things", "this", "times",
-    "to", "today", "todo", "tonight", "up", "us", "was", "we", "what", "whats",
-    "when", "where", "which", "who", "why", "will", "with", "work", "working",
-    "would", "you", "your",
+    "a",
+    "about",
+    "all",
+    "am",
+    "an",
+    "and",
+    "any",
+    "anything",
+    "are",
+    "as",
+    "at",
+    "be",
+    "been",
+    "before",
+    "by",
+    "calculate",
+    "can",
+    "complete",
+    "completed",
+    "context",
+    "contextvault",
+    "could",
+    "did",
+    "divided",
+    "do",
+    "does",
+    "done",
+    "equals",
+    "everything",
+    "file",
+    "files",
+    "finish",
+    "for",
+    "from",
+    "get",
+    "have",
+    "hello",
+    "help",
+    "hey",
+    "hi",
+    "how",
+    "i",
+    "in",
+    "important",
+    "is",
+    "it",
+    "left",
+    "me",
+    "minus",
+    "multiply",
+    "my",
+    "need",
+    "next",
+    "now",
+    "of",
+    "on",
+    "or",
+    "our",
+    "pending",
+    "please",
+    "plus",
+    "remaining",
+    "should",
+    "so",
+    "status",
+    "still",
+    "summarize",
+    "summary",
+    "task",
+    "tasks",
+    "tell",
+    "that",
+    "the",
+    "their",
+    "there",
+    "these",
+    "they",
+    "thing",
+    "things",
+    "this",
+    "times",
+    "to",
+    "today",
+    "todo",
+    "tonight",
+    "up",
+    "us",
+    "was",
+    "we",
+    "what",
+    "whats",
+    "when",
+    "where",
+    "which",
+    "who",
+    "why",
+    "will",
+    "with",
+    "work",
+    "working",
+    "would",
+    "you",
+    "your",
 }
 
 MONTH_ALIASES: dict[str, tuple[str, ...]] = {
@@ -94,17 +185,35 @@ MONTH_ALIASES: dict[str, tuple[str, ...]] = {
 }
 
 GREETINGS = {
-    "hi", "hello", "hey", "hiya", "yo", "hola", "hi contextvault",
-    "hello contextvault", "hey contextvault", "good morning",
-    "good afternoon", "good evening",
+    "hi",
+    "hello",
+    "hey",
+    "hiya",
+    "yo",
+    "hola",
+    "hi contextvault",
+    "hello contextvault",
+    "hey contextvault",
+    "good morning",
+    "good afternoon",
+    "good evening",
 }
 
 HOW_ARE_YOU = {
-    "how are you", "how are things", "how is it going", "whats up", "what s up",
+    "how are you",
+    "how are things",
+    "how is it going",
+    "whats up",
+    "what s up",
 }
 
 THANKS = {
-    "thanks", "thank you", "thx", "ty", "appreciate it", "thanks a lot",
+    "thanks",
+    "thank you",
+    "thx",
+    "ty",
+    "appreciate it",
+    "thanks a lot",
 }
 
 SAFE_OPERATORS = {
@@ -161,11 +270,40 @@ class QueryService:
         )
 
         personal_indicators = (
-            "my ", " i ", "i've", "i have", "we ", "our ", "need to", "still need",
-            "deadline", "deadlines", "symposium", "abstract", "project", "paid",
-            "payment", "fee", "receipt", "exam", "team", "upcoming", "coming up",
-            "todo", "to do", "task", "tasks", "complete", "completed", "finish",
-            "pending", "summarize", "documents", "files", "context", "schedule",
+            "my ",
+            " i ",
+            "i've",
+            "i have",
+            "we ",
+            "our ",
+            "need to",
+            "still need",
+            "deadline",
+            "deadlines",
+            "symposium",
+            "abstract",
+            "project",
+            "paid",
+            "payment",
+            "fee",
+            "receipt",
+            "exam",
+            "team",
+            "upcoming",
+            "coming up",
+            "todo",
+            "to do",
+            "task",
+            "tasks",
+            "complete",
+            "completed",
+            "finish",
+            "pending",
+            "summarize",
+            "documents",
+            "files",
+            "context",
+            "schedule",
         )
         padded = f" {cleaned} "
         has_personal = any(ind in padded for ind in personal_indicators)
@@ -189,8 +327,14 @@ class QueryService:
             if last_was_personal and any(
                 w in padded
                 for w in (
-                    " and ", " what about ", " how about ", " did ",
-                    " have ", " is it ", " when ", " who ",
+                    " and ",
+                    " what about ",
+                    " how about ",
+                    " did ",
+                    " have ",
+                    " is it ",
+                    " when ",
+                    " who ",
                 )
             ):
                 return "personal"
@@ -198,9 +342,7 @@ class QueryService:
         return "general"
 
     def search_context(self, question: str) -> list[dict[str, Any]]:
-        all_contexts = [
-            c for c in self.db.get_context() if not self._is_noise_file(c)
-        ]
+        all_contexts = [c for c in self.db.get_context() if not self._is_noise_file(c)]
         if not all_contexts:
             return []
 
@@ -243,14 +385,21 @@ class QueryService:
         is_task_or_deadline_query = any(
             kw in question.lower()
             for kw in (
-                "need to", "still need", "complete", "finish", "todo",
-                "pending", "deadline", "deadlines", "what do i",
+                "need to",
+                "still need",
+                "complete",
+                "finish",
+                "todo",
+                "pending",
+                "deadline",
+                "deadlines",
+                "what do i",
             )
         )
 
         if scored:
             results = [context for _, context in scored[:8]]
-            
+
             # --- STRICT TOPIC ISOLATION FILTER ---
             # If the user's question explicitly names a known event or entity,
             # discard any retrieved contexts that do not relate to that specific topic.
@@ -258,7 +407,7 @@ class QueryService:
             target_topics = set()
             for ctx in results:
                 data = ctx.get("data") or {}
-                for ev in (data.get("events", []) + data.get("entities", [])):
+                for ev in data.get("events", []) + data.get("entities", []):
                     ev_str = str(ev).lower().strip()
                     # Only match meaningful multi-character entities
                     if len(ev_str) > 3 and ev_str in question_lower:
@@ -268,15 +417,17 @@ class QueryService:
                 isolated_results = []
                 for ctx in results:
                     data = ctx.get("data") or {}
-                    ctx_haystack = " ".join([
-                        str(ctx.get("filename", "")).lower(),
-                        str(ctx.get("summary", "")).lower(),
-                        json.dumps(data, ensure_ascii=False).lower()
-                    ])
+                    ctx_haystack = " ".join(
+                        [
+                            str(ctx.get("filename", "")).lower(),
+                            str(ctx.get("summary", "")).lower(),
+                            json.dumps(data, ensure_ascii=False).lower(),
+                        ]
+                    )
                     # If this document mentions ANY of the targets found in the question, keep it.
                     if any(topic in ctx_haystack for topic in target_topics):
                         isolated_results.append(ctx)
-                
+
                 if isolated_results:
                     results = isolated_results
             # -------------------------------------
@@ -310,11 +461,25 @@ class QueryService:
     def _is_broad_personal_query(question: str) -> bool:
         lower = f" {question.lower()} "
         broad_phrases = (
-            "what do i", "what things do i", "what should i", "what have i",
-            "my deadlines", "what deadlines", "upcoming", "coming up",
-            "still need", "need to complete", "need to do", "pending",
-            "summarize", "everything", "all my", "my tasks", "my files",
-            "my project", "how much have i paid",
+            "what do i",
+            "what things do i",
+            "what should i",
+            "what have i",
+            "my deadlines",
+            "what deadlines",
+            "upcoming",
+            "coming up",
+            "still need",
+            "need to complete",
+            "need to do",
+            "pending",
+            "summarize",
+            "everything",
+            "all my",
+            "my tasks",
+            "my files",
+            "my project",
+            "how much have i paid",
         )
         return any(p in lower for p in broad_phrases)
 
@@ -326,15 +491,13 @@ class QueryService:
         if not terms:
             return []
         if contexts is None:
-            contexts = [
-                c for c in self.db.get_context() if not self._is_noise_file(c)
-            ]
+            contexts = [c for c in self.db.get_context() if not self._is_noise_file(c)]
 
         scored: list[tuple[int, dict[str, Any]]] = []
         for context in contexts:
             filename = str(context.get("filename") or "").lower()
             data = context.get("data") or {}
-            
+
             haystack = " ".join(
                 [
                     str(context.get("summary") or ""),
@@ -342,7 +505,7 @@ class QueryService:
                     json.dumps(data, ensure_ascii=False),
                 ]
             ).lower()
-            
+
             deadlines_text = " ".join(
                 str(d) for d in (data.get("deadlines") or [])
             ).lower()
@@ -567,20 +730,22 @@ class QueryService:
                             continue
                         try:
                             used_ids.add(int(source_id))
-                        except (TypeError, ValueError):
+                        except TypeError, ValueError:
                             continue
 
                     sources = []
                     for context in relevant_context:
                         try:
                             file_id = int(context["file_id"])
-                        except (KeyError, TypeError, ValueError):
+                        except KeyError, TypeError, ValueError:
                             continue
                         if file_id in used_ids:
                             sources.append(
                                 {
                                     "file_id": file_id,
-                                    "filename": str(context.get("filename") or "unknown"),
+                                    "filename": str(
+                                        context.get("filename") or "unknown"
+                                    ),
                                 }
                             )
 
@@ -591,9 +756,9 @@ class QueryService:
                         self._record_history(question, fallback["answer"], intent)
                         return fallback
 
-                    has_sufficient_context = (
-                        result.get("has_sufficient_context") is True and bool(sources)
-                    )
+                    has_sufficient_context = result.get(
+                        "has_sufficient_context"
+                    ) is True and bool(sources)
                     confidence = self._normalize_confidence(
                         result.get("confidence"), default=0.5
                     )
@@ -610,9 +775,7 @@ class QueryService:
             except Exception:
                 pass
 
-        fallback = self._synthesize_fallback(
-            question, relevant_context, intent=intent
-        )
+        fallback = self._synthesize_fallback(question, relevant_context, intent=intent)
         self._record_history(question, fallback["answer"], intent)
         return fallback
 
@@ -622,7 +785,7 @@ class QueryService:
             return default
         try:
             confidence = float(value)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return default
         if not math.isfinite(confidence):
             return default
@@ -634,9 +797,7 @@ class QueryService:
         answer: str,
         intent: str = "personal",
     ) -> None:
-        self.history.append(
-            {"question": question, "answer": answer, "intent": intent}
-        )
+        self.history.append({"question": question, "answer": answer, "intent": intent})
         if len(self.history) > 6:
             self.history = self.history[-6:]
 
@@ -727,9 +888,7 @@ class QueryService:
     @staticmethod
     def _tokenize(question: str) -> list[str]:
         return [
-            token.lower()
-            for token in re.findall(r"[A-Za-z0-9]+", question)
-            if token
+            token.lower() for token in re.findall(r"[A-Za-z0-9]+", question) if token
         ]
 
     @staticmethod
@@ -884,9 +1043,7 @@ class QueryService:
                 )
 
         completed_facts = list(
-            dict.fromkeys(
-                f.rstrip(".") for f in facts if is_completed_statement(f)
-            )
+            dict.fromkeys(f.rstrip(".") for f in facts if is_completed_statement(f))
         )
 
         cleaned_actions: list[str] = []
@@ -991,8 +1148,15 @@ class QueryService:
         if any(
             kw in question_lower
             for kw in (
-                "still need", "need to", "what do i", "what things",
-                "complete", "todo", "left", "finish", "pending",
+                "still need",
+                "need to",
+                "what do i",
+                "what things",
+                "complete",
+                "todo",
+                "left",
+                "finish",
+                "pending",
             )
         ):
             response_blocks: list[str] = []
