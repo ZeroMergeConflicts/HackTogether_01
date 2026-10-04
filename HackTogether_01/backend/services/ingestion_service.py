@@ -25,7 +25,7 @@ class IngestionService:
         }
 
         for file_path in files:
-            metadata = scanner.get_file_metadata(file_path)
+            metadata: Any = scanner.get_file_metadata(file_path)
             file_hash = scanner.get_file_hash(file_path)
             existing = self.db.get_file_by_path(str(file_path.resolve()))
 

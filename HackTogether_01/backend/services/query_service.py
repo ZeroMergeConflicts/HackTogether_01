@@ -837,15 +837,15 @@ class QueryService:
             return None
 
     @classmethod
-    def _eval_ast_node(cls, node: ast.AST) -> float | int:
+    def _eval_ast_node(cls, node: ast.AST) -> float | int | Any:
         if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
             return node.value
         if isinstance(node, ast.BinOp) and type(node.op) in SAFE_OPERATORS:
             left = cls._eval_ast_node(node.left)
             right = cls._eval_ast_node(node.right)
-            return SAFE_OPERATORS[type(node.op)](left, right)
+            return SAFE_OPERATORS[type(node.op)](left, right)  # type: ignore
         if isinstance(node, ast.UnaryOp) and type(node.op) in SAFE_OPERATORS:
-            return SAFE_OPERATORS[type(node.op)](cls._eval_ast_node(node.operand))
+            return SAFE_OPERATORS[type(node.op)](cls._eval_ast_node(node.operand))  # type: ignore
         raise ValueError("Unsupported expression")
 
     @staticmethod
@@ -1295,7 +1295,7 @@ class QueryService:
         cls,
         question: str,
         relevant_context: list[dict[str, Any]],
-    ) -> str:
+    ) -> str | Any:
         instance = cls.__new__(cls)
         instance.history = []
         return instance._synthesize_fallback(question, relevant_context)["answer"]

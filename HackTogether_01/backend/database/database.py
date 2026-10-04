@@ -177,7 +177,7 @@ class DatabaseManager:
                     status,
                 ),
             )
-            return int(cursor.lastrowid)
+            return int(cursor.lastrowid)  # type: ignore
 
     def get_file_by_path(self, path: str) -> dict[str, Any] | None:
         with self._connect() as connection:
@@ -226,7 +226,7 @@ class DatabaseManager:
                 """,
                 (file_id, summary, json.dumps(data, ensure_ascii=False)),
             )
-            return int(cursor.lastrowid)
+            return int(cursor.lastrowid)  # type: ignore
 
     def get_context(self) -> list[dict[str, Any]]:
         with self._connect() as connection:
@@ -293,7 +293,7 @@ class DatabaseManager:
                 "INSERT INTO entities (name, type) VALUES (?, ?)",
                 (name, entity_type),
             )
-            return int(cursor.lastrowid)
+            return int(cursor.lastrowid)  # type: ignore
 
     def attach_file_entity(self, file_id: int, entity_name: str) -> None:
         entity_id = self.upsert_entity(entity_name)
@@ -328,7 +328,7 @@ class DatabaseManager:
                 """,
                 (source_id, target_id, relationship_type, confidence, reason),
             )
-            return int(cursor.lastrowid)
+            return int(cursor.lastrowid)  # type: ignore
 
     def get_relationships(self) -> list[dict[str, Any]]:
         with self._connect() as connection:
@@ -357,7 +357,7 @@ class DatabaseManager:
                 "INSERT INTO processing_errors (file_id, message) VALUES (?, ?)",
                 (file_id, message),
             )
-            return int(cursor.lastrowid)
+            return int(cursor.lastrowid)  # type: ignore
 
     def get_errors(self) -> list[dict[str, Any]]:
         with self._connect() as connection:

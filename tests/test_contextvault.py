@@ -1,3 +1,9 @@
+from HackTogether_01.backend.ai.client import AIClient
+from HackTogether_01.backend.ai.analyzer import AIAnalyzer
+from HackTogether_01.backend.database.database import DatabaseManager
+from HackTogether_01.backend.services.query_service import QueryService
+
+
 def test_math_and_general_queries_never_dump_personal_context(self):
     db = DatabaseManager(":memory:")
     try:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from typing import Any, cast
+from typing import Any, cast, override
 
 from HackTogether_01.backend.ai.analyzer import AIAnalyzer
 from HackTogether_01.backend.ai.client import AIClient
@@ -35,6 +35,7 @@ class FakeAIClient:
 
 
 class QueryServiceAccuracyTests(unittest.TestCase):
+    @override
     def setUp(self) -> None:
         self.context = {
             "file_id": 1,

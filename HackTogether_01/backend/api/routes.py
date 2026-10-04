@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from typing import Any
 
 from ..ai.analyzer import AIAnalyzer
 from ..ai.client import AIClient, TEXT_EXTENSIONS
@@ -89,7 +90,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
         return {"folder_path": app.state.selected_folder, "status": "selected"}
 
     @app.post("/api/scan")
-    async def scan_folder(request: FolderSelectionRequest) -> dict[str, object]:
+    async def scan_folder(request: FolderSelectionRequest) -> dict[str, Any]:
         candidate = Path(request.folder_path).expanduser()
         if not candidate.exists():
             raise HTTPException(status_code=400, detail="Folder does not exist.")
@@ -121,7 +122,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
         return result
 
     @app.get("/api/scan/status")
-    async def get_scan_status() -> dict[str, int | str]:
+    async def get_scan_status() -> dict[str, int | str | Any]:
         return app.state.scan_status
 
     @app.get("/api/files")
@@ -219,7 +220,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
     async def answer_query(request: QueryRequest) -> dict[str, object]:
         if not request.query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty.")
-        return query_service.answer_query(request.query)
+        return query_service.answer_query(request.query)  # type: ignore
 
     return app
 
