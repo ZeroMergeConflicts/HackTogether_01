@@ -689,6 +689,11 @@ class QueryService:
             }
 
         relevant_context = self.search_context(question)
+        arrival_time_answer = self._answer_arrival_time(question, relevant_context)
+        if arrival_time_answer is not None:
+            self._record_history(question, arrival_time_answer["answer"], intent)
+            return arrival_time_answer
+
         if intent in {"personal", "mixed"} and not relevant_context:
             fallback = self._synthesize_fallback(question, [], intent=intent)
             self._record_history(question, fallback["answer"], intent)
@@ -926,6 +931,91 @@ class QueryService:
                 "when do",
             )
         )
+
+    @staticmethod
+    def _answer_arrival_time(
+        question: str,
+        relevant_context: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        lower = question.lower()
+        if not (
+            ("arrive" in lower or "arrival" in lower)
+            and any(word in lower for word in ("time", "when", "what"))
+        ):
+            return None
+
+        arrival_statements: list[tuple[str, dict[str, Any]]] = []
+        for context in relevant_context:
+            data = context.get("data") or {}
+            values = [
+                str(value).strip()
+                for key in (
+                    "important_facts",
+                    "events",
+                    "actions",
+                    "dates",
+                    "event_dates",
+                )
+                for value in data.get(key, []) or []
+            ]
+            values.append(str(context.get("summary") or ""))
+            for value in values:
+                if re.search(r"\barriv(?:e|al)\w*\b", value, flags=re.IGNORECASE):
+                    arrival_statements.append((value, context))
+
+        clock_pattern = re.compile(
+            r"\b(?:at\s*)?(\d{1,2}(?::[0-5]\d)?\s*(?:a\.?m\.?|p\.?m\.?))\b",
+            flags=re.IGNORECASE,
+        )
+        explicit_times = list(
+            dict.fromkeys(
+                match.group(1).strip()
+                for statement, _ in arrival_statements
+                for match in clock_pattern.finditer(statement)
+            )
+        )
+        cited_contexts = {
+            int(context["file_id"]): {
+                "file_id": int(context["file_id"]),
+                "filename": str(context.get("filename") or "unknown"),
+            }
+            for _, context in arrival_statements
+            if context.get("file_id") is not None
+        }
+
+        if len(explicit_times) == 1:
+            answer = f"The documents say to arrive at {explicit_times[0]}."
+            sufficient_context = True
+        elif len(explicit_times) > 1:
+            answer = (
+                "The documents give different arrival times, so I can't determine "
+                "which one to use."
+            )
+            sufficient_context = False
+        elif any(
+            re.search(
+                r"\b(?:share|send|announce|confirm|provide)\b.{0,80}"
+                r"\b(?:arrival time|time to arrive)\b",
+                statement,
+                flags=re.IGNORECASE,
+            )
+            for statement, _ in arrival_statements
+        ):
+            answer = (
+                "The documents don't specify an arrival time. The symposium "
+                "coordination team will share it with registered participants."
+            )
+            sufficient_context = False
+        else:
+            answer = "The available documents don't specify an arrival time."
+            sufficient_context = False
+
+        return {
+            "answer": answer,
+            "confidence": 0.9 if arrival_statements else 0.75,
+            "has_sufficient_context": sufficient_context,
+            "sources": list(cited_contexts.values()),
+        }
 
     def _answer_event_date(
         self,

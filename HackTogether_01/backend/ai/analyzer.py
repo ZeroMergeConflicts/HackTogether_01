@@ -361,12 +361,27 @@ class AIAnalyzer:
 
             # 3. Important facts / completed statements
             if is_completed_statement(line) or any(
-                w in lower for w in ("fee", "required", "exam", "scheduled", "held on")
+                w in lower
+                for w in (
+                    "fee",
+                    "required",
+                    "exam",
+                    "scheduled",
+                    "held on",
+                    "arrive",
+                    "arrival",
+                )
             ):
                 important_facts.append(line)
 
         if not important_facts and lines:
             important_facts = lines[:2]
+        important_facts.extend(
+            line
+            for line in lines
+            if re.search(r"\barriv(?:e|al)\w*\b", line, flags=re.IGNORECASE)
+            and line not in important_facts
+        )
 
         entities = list(dict.fromkeys([*events, *([stem] if stem else [])]))
 

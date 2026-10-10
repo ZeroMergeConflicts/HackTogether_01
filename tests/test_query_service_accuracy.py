@@ -117,6 +117,68 @@ class QueryServiceAccuracyTests(unittest.TestCase):
             0.5,
         )
 
+    def test_arrival_time_query_reports_when_time_is_not_specified(self) -> None:
+        context = {
+            "file_id": 4,
+            "filename": "coordinator_message.txt",
+            "summary": "Tech Symposium coordination message",
+            "data": {
+                "events": ["Annual Tech Symposium"],
+                "deadlines": ["Participant registration closes on 30 September 2026"],
+                "important_facts": [
+                    "The coordination team will share the final arrival time "
+                    "with registered participants."
+                ],
+            },
+        }
+        client = FakeAIClient(
+            {
+                "answer": "Registration closes on 30 September 2026.",
+                "confidence": 0.88,
+                "has_sufficient_context": True,
+                "relevant_file_ids": [4],
+            }
+        )
+        service = self.make_service(FakeDatabase([context]), client)
+
+        result = service.answer_query("What time should I arrive?")
+
+        self.assertEqual(
+            result["answer"],
+            "The documents don't specify an arrival time. The symposium "
+            "coordination team will share it with registered participants.",
+        )
+        self.assertFalse(result["has_sufficient_context"])
+        self.assertEqual(
+            result["sources"],
+            [{"file_id": 4, "filename": "coordinator_message.txt"}],
+        )
+        self.assertEqual(client.calls, 0)
+
+    def test_arrival_time_query_uses_explicit_arrival_time_only(self) -> None:
+        context = {
+            "file_id": 5,
+            "filename": "arrival_details.txt",
+            "summary": "Arrival details",
+            "data": {
+                "deadlines": ["Registration closes on 30 September 2026"],
+                "important_facts": ["Please arrive at 9:30 AM for the symposium."],
+            },
+        }
+        service = self.make_service(
+            FakeDatabase([context]),
+            FakeAIClient({}),
+        )
+
+        result = service.answer_query("What time should I arrive?")
+
+        self.assertEqual(result["answer"], "The documents say to arrive at 9:30 AM.")
+        self.assertTrue(result["has_sufficient_context"])
+        self.assertEqual(
+            result["sources"],
+            [{"file_id": 5, "filename": "arrival_details.txt"}],
+        )
+
     def test_event_date_query_does_not_return_registration_deadline(self) -> None:
         event_context = {
             "file_id": 2,
@@ -211,7 +273,9 @@ class QueryServiceAccuracyTests(unittest.TestCase):
                 "TECH SYMPOSIUM 2026\n"
                 "The Department is organizing the annual Tech Symposium "
                 "on 18 October 2026.\n"
-                "Registration deadline: 30 September 2026.\n",
+                "Registration deadline: 30 September 2026.\n"
+                "The coordination team will share the final arrival time "
+                "with registered participants.\n",
                 encoding="utf-8",
             )
             analyzer = AIAnalyzer(cast(AIClient, object()))
@@ -222,6 +286,11 @@ class QueryServiceAccuracyTests(unittest.TestCase):
         self.assertEqual(
             result["deadlines"],
             ["Registration deadline: 30 September 2026"],
+        )
+        self.assertIn(
+            "The coordination team will share the final arrival time "
+            "with registered participants",
+            result["important_facts"],
         )
 
 
