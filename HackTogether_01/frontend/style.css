@@ -2137,6 +2137,49 @@ body[data-shell-mode="workspace"] #landingShell {
   color: var(--text-muted);
 }
 
+.file-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.file-ignore-btn {
+  width: 30px;
+  height: 30px;
+  color: var(--text-muted);
+}
+
+.file-ignore-btn:hover {
+  color: var(--accent-primary);
+}
+
+.file-action-menu {
+  position: fixed;
+  z-index: 4900;
+  display: grid;
+  min-width: 190px;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow-popover);
+}
+
+.file-action-menu-label {
+  max-width: 250px;
+  overflow: hidden;
+  padding-inline: 4px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-action-menu .btn {
+  justify-content: flex-start;
+}
+
 /* ASK AI STUDIO */
 .studio-grid {
   display: grid;

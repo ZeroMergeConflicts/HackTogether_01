@@ -22,13 +22,18 @@ class IngestionService:
             "total": len(files),
             "processed": 0,
             "failed": 0,
+            "ignored": 0,
         }
 
         for file_path in files:
             metadata: Any = scanner.get_file_metadata(file_path)
-            file_hash = scanner.get_file_hash(file_path)
             existing = self.db.get_file_by_path(str(file_path.resolve()))
 
+            if existing and existing.get("ignored"):
+                status["ignored"] += 1
+                continue
+
+            file_hash = scanner.get_file_hash(file_path)
             if existing:
                 if existing["hash"] == file_hash:
                     self.db.update_file_status(existing["id"], "analyzed")
@@ -119,6 +124,7 @@ class IngestionService:
             "total": status["total"],
             "processed": status["processed"],
             "failed": status["failed"],
+            "ignored": status["ignored"],
             "files": self.db.get_files(),
             "context": self.db.get_context(),
             "relationships": self.db.get_relationships(),

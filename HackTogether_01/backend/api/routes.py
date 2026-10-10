@@ -26,6 +26,10 @@ class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1)
 
 
+class IgnoreFileRequest(BaseModel):
+    ignored: bool
+
+
 def create_app(db_path: str | None = None) -> FastAPI:
     app = FastAPI(title="ContextVault", version="0.2.0")
     db = DatabaseManager(db_path)
@@ -43,6 +47,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
         "total": 0,
         "processed": 0,
         "failed": 0,
+        "ignored": 0,
     }
     app.state.upload_folder = Path(__file__).resolve().parents[3] / ".uploads"
 
@@ -109,6 +114,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
             "total": 0,
             "processed": 0,
             "failed": 0,
+            "ignored": 0,
         }
 
         result = ingestion_service.scan_folder(str(candidate.resolve()))
@@ -121,6 +127,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
             "total": result.get("total", 0),
             "processed": result.get("processed", 0),
             "failed": result.get("failed", 0),
+            "ignored": result.get("ignored", 0),
         }
         return result
 
@@ -134,9 +141,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
         upload_folder: Path = app.state.upload_folder
         validated_files: list[tuple[UploadFile, str, str]] = []
         for upload in files:
-            filename = PurePosixPath(
-                (upload.filename or "").replace("\\", "/")
-            ).name
+            filename = PurePosixPath((upload.filename or "").replace("\\", "/")).name
             if not filename or filename in {".", ".."}:
                 raise HTTPException(status_code=400, detail="Invalid filename.")
 
@@ -181,6 +186,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
             "total": 0,
             "processed": 0,
             "failed": 0,
+            "ignored": 0,
         }
         result = ingestion_service.scan_folder(str(upload_folder.resolve()))
         app.state.scan_status = {
@@ -192,6 +198,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
             "total": result.get("total", 0),
             "processed": result.get("processed", 0),
             "failed": result.get("failed", 0),
+            "ignored": result.get("ignored", 0),
         }
         return {
             "uploaded": saved_files,
@@ -206,6 +213,15 @@ def create_app(db_path: str | None = None) -> FastAPI:
     @app.get("/api/files")
     async def get_files() -> dict[str, list[dict[str, object]]]:
         return {"files": db.get_files()}
+
+    @app.patch("/api/files/{file_id}/ignore")
+    async def set_file_ignored(
+        file_id: int,
+        request: IgnoreFileRequest,
+    ) -> dict[str, object]:
+        if not db.set_file_ignored(file_id, request.ignored):
+            raise HTTPException(status_code=404, detail="File not found.")
+        return {"file": db.get_file(file_id), "ignored": request.ignored}
 
     @app.get("/api/files/{file_id}")
     async def get_file(file_id: int) -> dict[str, object]:

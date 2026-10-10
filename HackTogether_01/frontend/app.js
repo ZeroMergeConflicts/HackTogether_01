@@ -207,6 +207,10 @@ function findFileRecord(fileId, filename) {
   return null;
 }
 
+function activeFiles() {
+  return state.files.filter((file) => !file.ignored);
+}
+
 function renderFileChip(fileId, filename) {
   const file = findFileRecord(fileId, filename);
   const resolvedId = file ? file.id : fileId || "";
@@ -484,7 +488,7 @@ function renderLandingHero() {
   const hLinks = document.getElementById("heroStatLinks");
   const hEngine = document.getElementById("heroStatEngine");
 
-  if (hFiles) hFiles.textContent = String(state.files.length);
+  if (hFiles) hFiles.textContent = String(activeFiles().length);
   if (hCtx) hCtx.textContent = String(state.context.length);
   if (hLinks) hLinks.textContent = String(state.relationships.length);
   if (hEngine) {
@@ -533,8 +537,9 @@ function renderLandingHero() {
 
   const bentoChips = document.getElementById("landingInteractiveChips");
   if (bentoChips) {
-    const sampleFiles = state.files.length
-      ? state.files.slice(0, 4)
+    const visibleFiles = activeFiles();
+    const sampleFiles = visibleFiles.length
+      ? visibleFiles.slice(0, 4)
       : [
         { id: "", name: "symposium_notice.txt" },
         { id: "", name: "symposium_whatsapp.txt" },
@@ -630,15 +635,16 @@ function getAggregatedVaultStats() {
 
 function renderStats() {
   const agg = getAggregatedVaultStats();
-  elements.fileCount.textContent = String(state.files.length);
+  const visibleFiles = activeFiles();
+  elements.fileCount.textContent = String(visibleFiles.length);
   elements.contextCount.textContent = String(state.context.length);
   elements.relationshipCount.textContent = String(state.relationships.length);
   elements.actionCount.textContent = String(agg.pendingActions.length);
   elements.entityCount.textContent = String(agg.entityTotal);
   elements.amountCount.textContent = String(agg.amounts.length);
 
-  const analyzed = state.files.filter((f) => f.status === "analyzed").length;
-  const failed = state.files.filter((f) => f.status === "failed").length;
+  const analyzed = visibleFiles.filter((f) => f.status === "analyzed").length;
+  const failed = visibleFiles.filter((f) => f.status === "failed").length;
   document.getElementById("fileSubtext").textContent =
     `${analyzed} analyzed · ${failed} failed`;
   document.getElementById("deadlineSubtext").textContent =
@@ -647,33 +653,45 @@ function renderStats() {
     ? agg.amounts.map((a) => a.text).slice(0, 3).join(" · ")
     : "Fees & receipts";
 
-  document.getElementById("navBadgeFiles").textContent = String(state.files.length);
+  document.getElementById("navBadgeFiles").textContent = String(visibleFiles.length);
   document.getElementById("navBadgeContext").textContent = String(state.context.length);
   document.getElementById("navBadgeActions").textContent = String(agg.pendingActions.length);
   document.getElementById("navBadgeTelemetry").textContent = String(state.relationships.length);
   document.getElementById("navBadgeGraph").textContent = String(
-    state.files.length + agg.entityTotal,
+    visibleFiles.length + agg.entityTotal,
   );
 }
 
 function renderFiles() {
   const searchQuery = (document.getElementById("fileSearchInput")?.value || "").toLowerCase();
   const statusFilter = document.getElementById("fileStatusFilter")?.value || "all";
+  const visibilityFilter =
+    document.getElementById("fileVisibilityFilter")?.value || "active";
+  const visibilityLabel =
+    visibilityFilter === "ignored"
+      ? "ignored files"
+      : visibilityFilter === "all"
+        ? "files"
+        : "active files";
 
   const filtered = state.files.filter((file) => {
+    const matchesVisibility =
+      visibilityFilter === "all" ||
+      (visibilityFilter === "ignored" ? file.ignored : !file.ignored);
     const matchesStatus = statusFilter === "all" || file.status === statusFilter;
     const matchesQuery =
       !searchQuery ||
       String(file.name).toLowerCase().includes(searchQuery) ||
       String(file.extension || "").toLowerCase().includes(searchQuery) ||
       String(file.hash || "").toLowerCase().includes(searchQuery);
-    return matchesStatus && matchesQuery;
+    return matchesVisibility && matchesStatus && matchesQuery;
   });
 
   const dashList = document.getElementById("dashboardFileList");
+  const visibleFiles = activeFiles();
   if (dashList) {
-    dashList.innerHTML = state.files.length
-      ? state.files
+    dashList.innerHTML = visibleFiles.length
+      ? visibleFiles
         .slice(0, 5)
         .map(
           (file) => `
@@ -694,7 +712,7 @@ function renderFiles() {
   }
 
   if (!filtered.length) {
-    elements.fileList.innerHTML = '<li class="empty-state">No matching files found.</li>';
+    elements.fileList.innerHTML = `<li class="empty-state">No matching ${visibilityLabel} found.</li>`;
     refreshIcons();
     return;
   }
@@ -708,7 +726,18 @@ function renderFiles() {
         <li class="file-item vault-file-card" data-file-id="${file.id}" data-filename="${escapeHtml(file.name)}">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <span class="mono-label">#${file.id} · ${escapeHtml(file.extension || ".file")}</span>
-            <span class="pill ${escapeHtml(file.status)}">${escapeHtml(file.status)}</span>
+            <span class="file-card-actions">
+              <span class="pill ${escapeHtml(file.status)}">${file.ignored ? "ignored" : escapeHtml(file.status)}</span>
+              <button
+                class="btn btn-icon-only file-ignore-btn"
+                type="button"
+                data-ignore-file="${file.id}"
+                aria-label="${file.ignored ? "Restore" : "Ignore"} ${escapeHtml(file.name)}"
+                title="${file.ignored ? "Restore file to your vault" : "Ignore file in your vault"}"
+              >
+                <i data-lucide="${file.ignored ? "eye" : "eye-off"}" class="icon-xs"></i>
+              </button>
+            </span>
           </div>
           <div>
             <strong>
@@ -863,7 +892,7 @@ function renderActionMatrixAndRadar() {
       ? focus.text.replace(/^[-*]\s*/, "")
       : hasItemsToReview
         ? `${agg.pendingActions.length + agg.deadlines.length} extracted ${agg.pendingActions.length + agg.deadlines.length === 1 ? "item is" : "items are"} ready for review.`
-        : state.files.length
+        : activeFiles().length
           ? "No open actions surfaced. Your vault is looking clear."
           : "Scan a folder to build your first connected overview.";
     document.getElementById("dashboardFocusSource").innerHTML = focus
@@ -994,7 +1023,7 @@ function renderRelationshipsAndTelemetry() {
         </div>
         <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-secondary);">
           <span>Model: ${escapeHtml(state.health.model || "gemini-2.5-flash")}</span>
-          <span>Indexed Files: ${state.files.length}</span>
+          <span>Indexed Files: ${activeFiles().length}</span>
         </div>
       </div>
     `;
@@ -1281,6 +1310,15 @@ async function openFileInspector(fileId, filename) {
   document.getElementById("inspectorEyebrow").textContent =
     `FILE INSPECTOR · ID #${file.id}`;
   document.getElementById("inspectorFilename").textContent = file.name;
+  const ignoreButton = document.getElementById("inspectorIgnoreBtn");
+  ignoreButton.dataset.fileId = String(file.id);
+  ignoreButton.querySelector("span").textContent = file.ignored
+    ? "Restore"
+    : "Ignore";
+  ignoreButton.querySelector("i").setAttribute(
+    "data-lucide",
+    file.ignored ? "eye" : "eye-off",
+  );
 
   const rawLink = document.getElementById("inspectorRawLink");
   if (data.raw_url) {
@@ -1395,6 +1433,7 @@ function buildGraphTopology() {
   };
 
   state.files.forEach((f) => {
+    if (f.ignored) return;
     addNode(`file_${f.id}`, f.name, "file", f.id, f.name);
   });
 
@@ -1441,6 +1480,27 @@ function buildGraphTopology() {
   state.hoveredGraphNode = null;
   const hud = document.getElementById("graphHudStats");
   if (hud) hud.textContent = `${nodes.length} Nodes · ${edges.length} Edges`;
+}
+
+function openFileActionMenu(fileId, clientX, clientY) {
+  const file = state.files.find((record) => Number(record.id) === Number(fileId));
+  const menu = document.getElementById("fileActionMenu");
+  if (!file || !menu) return;
+
+  const button = document.getElementById("toggleFileIgnoreBtn");
+  document.getElementById("fileActionMenuLabel").textContent = file.name;
+  button.dataset.fileId = String(file.id);
+  button.querySelector("span").textContent = file.ignored ? "Restore file" : "Ignore file";
+  button.querySelector("i").setAttribute(
+    "data-lucide",
+    file.ignored ? "eye" : "eye-off",
+  );
+  menu.classList.remove("hidden");
+  refreshIcons();
+
+  const bounds = menu.getBoundingClientRect();
+  menu.style.left = `${Math.max(8, Math.min(clientX, innerWidth - bounds.width - 8))}px`;
+  menu.style.top = `${Math.max(8, Math.min(clientY, innerHeight - bounds.height - 8))}px`;
 }
 
 function stepAndDrawGraph(canvas) {
@@ -1647,6 +1707,13 @@ function attachCanvasInteractivity(canvas) {
       openFileInspector(node.fileId, node.filename);
     }
   });
+
+  canvas.addEventListener("contextmenu", (event) => {
+    const { node } = getHitNode(event);
+    if (!node || node.type !== "file" || !node.fileId) return;
+    event.preventDefault();
+    openFileActionMenu(node.fileId, event.clientX, event.clientY);
+  });
 }
 
 function startGraphLoop() {
@@ -1695,6 +1762,19 @@ async function fetchDashboard() {
   refreshIcons();
 }
 
+async function setFileIgnored(fileId, ignored) {
+  try {
+    await apiRequest(`/api/files/${fileId}/ignore`, {
+      method: "PATCH",
+      body: JSON.stringify({ ignored }),
+    });
+    await fetchDashboard();
+    showToast(ignored ? "File ignored. Its data is preserved." : "File restored to your vault.");
+  } catch (error) {
+    showToast(`Could not update file: ${error.message}`);
+  }
+}
+
 async function scanFolder() {
   if (state.scanning) return;
 
@@ -1723,7 +1803,10 @@ async function scanFolder() {
 
     state.scanStatus = payload;
     await fetchDashboard();
-    const msg = `Scan complete: ${payload.processed} processed, ${payload.failed} failed.`;
+    const ignoredMessage = payload.ignored
+      ? `, ${payload.ignored} ignored`
+      : "";
+    const msg = `Scan complete: ${payload.processed} processed, ${payload.failed} failed${ignoredMessage}.`;
     setStatus(msg);
     showToast(msg);
   } catch (error) {
@@ -1859,7 +1942,7 @@ function renderCommandResults(filterText) {
     { label: "Go to Synaptic Knowledge Graph", sub: "Workspace", action: () => navigateTo("graph") },
     { label: "Go to Vault Files", sub: "Repository", action: () => navigateTo("files") },
     { label: "Go to Context Explorer", sub: "Repository", action: () => navigateTo("explorer") },
-    ...state.files.map((f) => ({
+    ...activeFiles().map((f) => ({
       label: `Inspect File: ${f.name}`,
       sub: `File #${f.id} · ${f.status}`,
       action: () => openFileInspector(f.id, f.name),
@@ -1911,6 +1994,41 @@ document.addEventListener("mouseout", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const ignoreButton = event.target.closest("[data-ignore-file]");
+  if (ignoreButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = state.files.find(
+      (record) => Number(record.id) === Number(ignoreButton.dataset.ignoreFile),
+    );
+    if (file) setFileIgnored(file.id, !file.ignored);
+    return;
+  }
+
+  const inspectorIgnoreButton = event.target.closest("#inspectorIgnoreBtn");
+  if (inspectorIgnoreButton) {
+    const file = state.files.find(
+      (record) => Number(record.id) === Number(inspectorIgnoreButton.dataset.fileId),
+    );
+    elements.fileInspectorBackdrop.classList.add("hidden");
+    if (file) setFileIgnored(file.id, !file.ignored);
+    return;
+  }
+
+  const menuAction = event.target.closest("#toggleFileIgnoreBtn");
+  if (menuAction) {
+    const file = state.files.find(
+      (record) => Number(record.id) === Number(menuAction.dataset.fileId),
+    );
+    document.getElementById("fileActionMenu").classList.add("hidden");
+    if (file) setFileIgnored(file.id, !file.ignored);
+    return;
+  }
+
+  if (!event.target.closest("#fileActionMenu")) {
+    document.getElementById("fileActionMenu").classList.add("hidden");
+  }
+
   const journeyStep = event.target.closest("[data-journey-step]");
   if (journeyStep) {
     state.activeJourneyStep = journeyStep.dataset.journeyStep;
@@ -2032,6 +2150,7 @@ document.getElementById("clearChatBtn").addEventListener("click", () => {
 
 document.getElementById("fileSearchInput")?.addEventListener("input", renderFiles);
 document.getElementById("fileStatusFilter")?.addEventListener("change", renderFiles);
+document.getElementById("fileVisibilityFilter")?.addEventListener("change", renderFiles);
 document.getElementById("contextSearchInput")?.addEventListener("input", renderContextExplorer);
 
 document.querySelectorAll(".seg-tab").forEach((btn) => {
@@ -2084,6 +2203,7 @@ window.addEventListener("keydown", (e) => {
   } else if (e.key === "Escape") {
     closeCommandPalette();
     elements.fileInspectorBackdrop.classList.add("hidden");
+    document.getElementById("fileActionMenu").classList.add("hidden");
   }
 });
 

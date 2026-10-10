@@ -918,6 +918,7 @@
                     <li><strong>Drag</strong> nodes to reorganize layout</li>
                     <li><strong>Hover</strong> any node to preview source file</li>
                     <li><strong>Click</strong> any node to open Deep Inspector</li>
+                    <li><strong>Right-click</strong> a file node to ignore or restore it</li>
                   </ul>
                   <div class="graph-node-legend" aria-label="Graph node types">
                     <span><i class="graph-key-dot file" aria-hidden="true"></i>Files</span>
@@ -939,6 +940,15 @@
                   <h3>Indexed Vault Files</h3>
                 </div>
                 <div class="toolbar-actions">
+                  <select
+                    id="fileVisibilityFilter"
+                    class="input-select"
+                    aria-label="File visibility"
+                  >
+                    <option value="active">Active files</option>
+                    <option value="ignored">Ignored files</option>
+                    <option value="all">All files</option>
+                  </select>
                   <input
                     type="search"
                     id="fileSearchInput"
@@ -1129,6 +1139,14 @@
     </div>
 
     <!-- ==================== HOVER QUICK-PEEK POPOVER ==================== -->
+    <div id="fileActionMenu" class="file-action-menu hidden" role="menu">
+      <span id="fileActionMenuLabel" class="file-action-menu-label"></span>
+      <button id="toggleFileIgnoreBtn" class="btn btn-secondary btn-sm" type="button" role="menuitem">
+        <i data-lucide="eye-off" class="icon-xs"></i>
+        <span>Ignore file</span>
+      </button>
+    </div>
+
     <div id="fileHoverCard" class="hover-peek-card hidden" role="tooltip">
       <div class="peek-header">
         <span class="peek-ext" id="hoverExt">.TXT</span>
@@ -1156,6 +1174,14 @@
             <h3 id="inspectorFilename">document.txt</h3>
           </div>
           <div class="drawer-actions">
+            <button
+              id="inspectorIgnoreBtn"
+              class="btn btn-secondary btn-sm"
+              type="button"
+            >
+              <i data-lucide="eye-off" class="icon-xs"></i>
+              <span>Ignore</span>
+            </button>
             <a
               id="inspectorRawLink"
               href="#"

@@ -113,6 +113,14 @@ class DatabaseManager:
                 );
                 """
             )
+            file_columns = {
+                row["name"]
+                for row in connection.execute("PRAGMA table_info(files)").fetchall()
+            }
+            if "ignored" not in file_columns:
+                connection.execute(
+                    "ALTER TABLE files ADD COLUMN ignored INTEGER NOT NULL DEFAULT 0"
+                )
 
     def upsert_file(
         self,
@@ -200,6 +208,14 @@ class DatabaseManager:
             ).fetchone()
         return dict(row) if row else None
 
+    def set_file_ignored(self, file_id: int, ignored: bool) -> bool:
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE files SET ignored = ? WHERE id = ?",
+                (int(ignored), file_id),
+            )
+        return cursor.rowcount > 0
+
     def update_file_status(self, file_id: int, status: str) -> None:
         with self._connect() as connection:
             connection.execute(
@@ -242,6 +258,7 @@ class DatabaseManager:
                     c.updated_at
                 FROM contexts c
                 LEFT JOIN files f ON f.id = c.file_id
+                WHERE f.ignored = 0
                 ORDER BY c.id ASC
                 """
             ).fetchall()
@@ -344,8 +361,9 @@ class DatabaseManager:
                     sf.name AS source_name,
                     tf.name AS target_name
                 FROM relationships r
-                LEFT JOIN files sf ON sf.id = r.source_id
-                LEFT JOIN files tf ON tf.id = r.target_id
+                JOIN files sf ON sf.id = r.source_id
+                JOIN files tf ON tf.id = r.target_id
+                WHERE sf.ignored = 0 AND tf.ignored = 0
                 ORDER BY r.id ASC
                 """
             ).fetchall()
