@@ -73,6 +73,13 @@ The database is created automatically on startup. The generated `contextvault.db
 5. Use the dashboard or workspace navigation to review extracted context, tasks, deadlines, links, and files.
 6. Ask a question in Instant Synthesis or AI Studio. Personal answers include source files when supporting evidence is available.
 
+Sample related documents are included in `sample_data/tech_symposium/`. To try them, enter `sample_data/tech_symposium` in the folder path and select **Scan Folder**, or upload the three text files from the **Upload Files** page. Example questions include:
+
+- When is the annual Tech Symposium?
+- What is the registration deadline?
+- What needs to go into the project abstract?
+- Where is the symposium, and what should participants bring?
+
 The scanner supports `.txt`, `.md`, `.csv`, `.json`, `.html`, `.htm`, `.pdf`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.webp`, and `.svg` files. PDF and image understanding requires Gemini configuration. Without Gemini, text files use a limited local extractor; binary files cannot be meaningfully analyzed by that fallback.
 
 Scanning does not automatically remove database records for files that have since been deleted from disk. Existing file metadata and extracted context remain in SQLite.
