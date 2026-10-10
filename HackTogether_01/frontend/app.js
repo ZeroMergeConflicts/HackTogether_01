@@ -8,6 +8,8 @@ const state = {
   currentRoute: "welcome",
   selectedFolder: ".test",
   files: [],
+  uploadFiles: [],
+  uploading: false,
   context: [],
   relationships: [],
   errors: [],
@@ -40,6 +42,7 @@ const VIEW_META = {
   actions: { eyebrow: "WORKSPACE / TASK MATRIX", title: "Action & Deadline Board" },
   graph: { eyebrow: "WORKSPACE / TOPOLOGY", title: "Synaptic Knowledge Graph" },
   files: { eyebrow: "REPOSITORY / REGISTRY", title: "Vault Files" },
+  upload: { eyebrow: "REPOSITORY / ADD SOURCES", title: "Upload Files" },
   explorer: { eyebrow: "REPOSITORY / EXTRACTIONS", title: "Context Explorer" },
   telemetry: { eyebrow: "REPOSITORY / DIAGNOSTICS", title: "Links & System Telemetry" },
 };
@@ -172,7 +175,8 @@ function showToast(message) {
 
 async function apiRequest(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers:
+      options.body instanceof FormData ? {} : { "Content-Type": "application/json" },
     ...options,
   });
 
@@ -1652,6 +1656,102 @@ async function scanFolder() {
   }
 }
 
+function renderUploadQueue() {
+  const queue = document.getElementById("uploadQueue");
+  const uploadButton = document.getElementById("uploadFilesBtn");
+  const clearButton = document.getElementById("clearUploadBtn");
+  if (!queue || !uploadButton || !clearButton) return;
+
+  if (state.uploadFiles.length === 0) {
+    queue.innerHTML = '<div class="upload-queue-empty">No files selected yet.</div>';
+  } else {
+    queue.innerHTML = state.uploadFiles
+      .map(
+        (file, index) => `
+          <div class="upload-file-row">
+            <i data-lucide="${iconForExtension(file.name)}" class="icon-sm"></i>
+            <span class="upload-file-name">${escapeHtml(file.name)}</span>
+            <small>${formatFileSize(file.size)}</small>
+            <button
+              class="btn btn-icon-only upload-remove-file"
+              type="button"
+              data-remove-upload="${index}"
+              aria-label="Remove ${escapeHtml(file.name)}"
+              title="Remove file"
+            >
+              <i data-lucide="x" class="icon-xs"></i>
+            </button>
+          </div>
+        `,
+      )
+      .join("");
+  }
+
+  uploadButton.disabled = state.uploadFiles.length === 0 || state.uploading;
+  clearButton.disabled = state.uploadFiles.length === 0 || state.uploading;
+  refreshIcons();
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function addUploadFiles(files) {
+  const existing = new Set(
+    state.uploadFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`),
+  );
+  for (const file of files) {
+    const key = `${file.name}:${file.size}:${file.lastModified}`;
+    if (!existing.has(key)) {
+      state.uploadFiles.push(file);
+      existing.add(key);
+    }
+  }
+  renderUploadQueue();
+}
+
+async function uploadSelectedFiles() {
+  if (state.uploadFiles.length === 0 || state.uploading) return;
+
+  const status = document.getElementById("uploadStatus");
+  const formData = new FormData();
+  state.uploadFiles.forEach((file) => formData.append("files", file, file.name));
+  state.uploading = true;
+  if (status) status.textContent = "Uploading files and indexing your vault...";
+  renderUploadQueue();
+
+  try {
+    const payload = await apiRequest("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+    elements.folderPath.value = payload.folder_path;
+    const scan = payload.scan;
+    const indexed = Math.max(0, Number(scan.processed) - Number(scan.failed));
+    const message = `${payload.uploaded.length} file${payload.uploaded.length === 1 ? "" : "s"} uploaded; ${indexed} indexed, ${scan.failed} failed.`;
+    if (status) status.textContent = message;
+    state.uploadFiles = [];
+    document.getElementById("uploadInput").value = "";
+    try {
+      await fetchDashboard();
+    } catch (error) {
+      if (status) {
+        status.textContent = `${message} Refresh failed: ${error.message}`;
+      }
+    }
+    setStatus(message);
+    showToast(message);
+  } catch (error) {
+    if (status) status.textContent = `Upload failed: ${error.message}`;
+    showToast(`Upload failed: ${error.message}`);
+  } finally {
+    state.uploading = false;
+    renderUploadQueue();
+  }
+}
+
 function openCommandPalette() {
   elements.cmdPaletteBackdrop.classList.remove("hidden");
   const input = document.getElementById("cmdInput");
@@ -1759,6 +1859,13 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const removeUpload = event.target.closest("[data-remove-upload]");
+  if (removeUpload) {
+    state.uploadFiles.splice(Number(removeUpload.dataset.removeUpload), 1);
+    renderUploadQueue();
+    return;
+  }
+
   const preset = event.target.closest(".suggestion-chip");
   if (preset && preset.dataset.query) {
     askContextVault(preset.dataset.query);
@@ -1773,6 +1880,41 @@ document.addEventListener("click", (event) => {
 });
 
 document.getElementById("scanBtn").addEventListener("click", scanFolder);
+const uploadInput = document.getElementById("uploadInput");
+const uploadDropzone = document.getElementById("uploadDropzone");
+uploadInput.addEventListener("change", () => {
+  addUploadFiles(uploadInput.files);
+  uploadInput.value = "";
+});
+uploadDropzone.addEventListener("click", (event) => {
+  if (!event.target.closest(".upload-input")) uploadInput.click();
+});
+uploadDropzone.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    uploadInput.click();
+  }
+});
+for (const eventName of ["dragenter", "dragover"]) {
+  uploadDropzone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    uploadDropzone.classList.add("is-dragging");
+  });
+}
+for (const eventName of ["dragleave", "drop"]) {
+  uploadDropzone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    uploadDropzone.classList.remove("is-dragging");
+  });
+}
+uploadDropzone.addEventListener("drop", (event) => {
+  addUploadFiles(event.dataTransfer.files);
+});
+document.getElementById("uploadFilesBtn").addEventListener("click", uploadSelectedFiles);
+document.getElementById("clearUploadBtn").addEventListener("click", () => {
+  state.uploadFiles = [];
+  renderUploadQueue();
+});
 document.getElementById("heroQuickScanBtn")?.addEventListener("click", () => {
   navigateTo("dashboard");
   scanFolder();

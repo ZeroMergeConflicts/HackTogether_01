@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, cast, override
 
 from HackTogether_01.backend.ai.analyzer import AIAnalyzer
@@ -113,6 +115,113 @@ class QueryServiceAccuracyTests(unittest.TestCase):
         self.assertEqual(
             QueryService._normalize_confidence(float("nan"), default=0.5),
             0.5,
+        )
+
+    def test_event_date_query_does_not_return_registration_deadline(self) -> None:
+        event_context = {
+            "file_id": 2,
+            "filename": "symposium.txt",
+            "summary": "Tech Symposium 2026",
+            "data": {
+                "events": ["Annual Tech Symposium"],
+                "event_dates": ["18 October 2026"],
+                "dates": ["18 October 2026", "30 September 2026"],
+                "deadlines": ["Registration deadline: 30 September 2026"],
+            },
+        }
+        client = FakeAIClient(
+            {
+                "answer": "Registration deadline: 30 September 2026.",
+                "confidence": 0.94,
+                "has_sufficient_context": True,
+                "relevant_file_ids": [2],
+            }
+        )
+        service = self.make_service(FakeDatabase([event_context]), client)
+
+        result = service.answer_query("When is the annual Tech Symposium?")
+
+        self.assertEqual(
+            result["answer"],
+            "The Annual Tech Symposium is scheduled for 18 October 2026.",
+        )
+        self.assertNotIn("30 September", result["answer"])
+        self.assertEqual(
+            result["sources"],
+            [{"file_id": 2, "filename": "symposium.txt"}],
+        )
+        self.assertEqual(client.calls, 0)
+
+    def test_event_date_lookup_uses_legacy_dates_without_deadline_date(self) -> None:
+        legacy_context = {
+            "file_id": 3,
+            "filename": "symposium.txt",
+            "summary": "Annual Tech Symposium",
+            "data": {
+                "events": ["Annual Tech Symposium"],
+                "dates": ["18 October 2026", "30 September 2026"],
+                "deadlines": ["Registration deadline: 30 September 2026"],
+            },
+        }
+        service = self.make_service(
+            FakeDatabase([legacy_context]),
+            FakeAIClient({}),
+        )
+
+        result = service.answer_query("When is the annual Tech Symposium?")
+
+        self.assertIn("18 October 2026", result["answer"])
+        self.assertNotIn("30 September", result["answer"])
+
+    def test_registration_deadline_query_is_not_treated_as_event_date(self) -> None:
+        event_context = {
+            "file_id": 2,
+            "filename": "symposium.txt",
+            "summary": "Tech Symposium 2026",
+            "data": {
+                "events": ["Annual Tech Symposium"],
+                "event_dates": ["18 October 2026"],
+                "dates": ["18 October 2026", "30 September 2026"],
+                "deadlines": ["Registration deadline: 30 September 2026"],
+            },
+        }
+        client = FakeAIClient(
+            {
+                "answer": "Registration closes on 30 September 2026.",
+                "confidence": 0.94,
+                "has_sufficient_context": True,
+                "relevant_file_ids": [2],
+            }
+        )
+        service = self.make_service(FakeDatabase([event_context]), client)
+
+        result = service.answer_query(
+            "When is the registration deadline for the Tech Symposium?"
+        )
+
+        self.assertIn("30 September 2026", result["answer"])
+        self.assertEqual(client.calls, 1)
+        self.assertIn("Event Dates", client.last_prompt)
+        self.assertIn("Deadlines", client.last_prompt)
+
+    def test_fallback_extraction_separates_event_date_from_deadline(self) -> None:
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / "symposium.txt"
+            source.write_text(
+                "TECH SYMPOSIUM 2026\n"
+                "The Department is organizing the annual Tech Symposium "
+                "on 18 October 2026.\n"
+                "Registration deadline: 30 September 2026.\n",
+                encoding="utf-8",
+            )
+            analyzer = AIAnalyzer(cast(AIClient, object()))
+
+            result = analyzer._fallback_analysis(source)
+
+        self.assertEqual(result["event_dates"], ["18 October 2026"])
+        self.assertEqual(
+            result["deadlines"],
+            ["Registration deadline: 30 September 2026"],
         )
 
 

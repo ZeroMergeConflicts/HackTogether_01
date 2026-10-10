@@ -11,6 +11,7 @@ The app includes a browser-based dashboard, AI question answering, an action and
 - Links related documents and exposes the evidence behind answers.
 - Supports Gemini-powered multimodal analysis when an API key is configured.
 - Runs with a local fallback when Gemini is not configured; fallback analysis and answers are more limited.
+- Accepts multiple files from the Upload Files page via file picker or drag and drop, then stores and indexes them in the server's `.uploads/` folder without a per-file size limit.
 - Stores file metadata and extracted context in SQLite.
 
 ## Requirements
@@ -61,15 +62,16 @@ python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model name used by the adapter. |
 | `DATABASE_URL` | `contextvault.db` in the repository root | SQLite database path. Despite its name, this currently accepts a filesystem path, not a remote database URL. Use `:memory:` for an in-memory database in development/tests. |
 
-The database is created automatically on startup. The generated `contextvault.db`, `.env`, `.venv`, and `.test/` are ignored by Git.
+The database is created automatically on startup. The generated `contextvault.db`, `.env`, `.venv`, `.test/`, and `.uploads/` are ignored by Git.
 
 ## Use the App
 
 1. Start the server and open the dashboard.
-2. Enter a folder path that is accessible to the machine running the backend. The default path is `.test` relative to the server's working directory.
-3. Select **Scan Folder**. The scan is recursive; new and modified files are analyzed, while unchanged files are skipped by hash.
-4. Use the dashboard or workspace navigation to review extracted context, tasks, deadlines, links, and files.
-5. Ask a question in Instant Synthesis or AI Studio. Personal answers include source files when supporting evidence is available.
+2. Upload documents on the **Upload Files** page by browsing or dragging files into the drop zone. Uploads are stored in `.uploads/` on the backend machine and indexed automatically.
+3. Alternatively, enter a folder path accessible to the backend. The default path is `.test` relative to the server's working directory.
+4. Select **Scan Folder**. Scans are recursive; new and modified files are analyzed, while unchanged files are skipped by hash.
+5. Use the dashboard or workspace navigation to review extracted context, tasks, deadlines, links, and files.
+6. Ask a question in Instant Synthesis or AI Studio. Personal answers include source files when supporting evidence is available.
 
 The scanner supports `.txt`, `.md`, `.csv`, `.json`, `.html`, `.htm`, `.pdf`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.webp`, and `.svg` files. PDF and image understanding requires Gemini configuration. Without Gemini, text files use a limited local extractor; binary files cannot be meaningfully analyzed by that fallback.
 
@@ -84,6 +86,7 @@ All routes use the local FastAPI server. Request and response schemas are also b
 | `GET` | `/api/health` | Reports service status, selected model, Gemini configuration, and selected folder. |
 | `POST` | `/api/folder/select` | Validates and records a folder path. Body: `{"folder_path": "..."}`. |
 | `POST` | `/api/scan` | Scans and processes a folder. Body: `{"folder_path": "..."}`. |
+| `POST` | `/api/upload` | Accepts multiple `files` multipart form fields, stores files in `.uploads/`, and indexes that folder. |
 | `GET` | `/api/scan/status` | Returns the most recently recorded scan status. |
 | `GET` | `/api/files` | Lists indexed files. |
 | `GET` | `/api/files/{file_id}` | Returns a file and its extracted context. |

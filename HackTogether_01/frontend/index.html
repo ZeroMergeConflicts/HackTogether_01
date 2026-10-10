@@ -634,6 +634,12 @@ Files found:
                 </span>
                 <span class="nav-count" id="navBadgeFiles">0</span>
               </a>
+              <a href="#/upload" class="nav-item" data-route="upload">
+                <span class="nav-item-left">
+                  <i data-lucide="cloud-upload" class="nav-svg"></i>
+                  <span>Upload Files</span>
+                </span>
+              </a>
               <a href="#/explorer" class="nav-item" data-route="explorer">
                 <span class="nav-item-left">
                   <i data-lucide="database" class="nav-svg"></i>
@@ -1094,7 +1100,61 @@ Files found:
             </div>
           </section>
 
-          <!-- VIEW 5: CONTEXT EXPLORER -->
+          <!-- VIEW 5: UPLOAD FILES -->
+          <section class="view-page" id="view-upload">
+            <div class="surface-card upload-page-card">
+              <div class="section-header border-bottom">
+                <div>
+                  <span class="mono-label">ADD SOURCES TO YOUR VAULT</span>
+                  <h3>Upload files</h3>
+                </div>
+                <span class="badge badge-emerald">Private to this server</span>
+              </div>
+
+              <div
+                class="upload-dropzone"
+                id="uploadDropzone"
+                role="button"
+                tabindex="0"
+                aria-label="Choose files or drag and drop them to upload"
+              >
+                <input
+                  id="uploadInput"
+                  class="upload-input"
+                  type="file"
+                  multiple
+                  accept=".txt,.md,.csv,.json,.html,.htm,.pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp,.svg"
+                />
+                <span class="upload-icon-wrap">
+                  <i data-lucide="cloud-upload" class="icon-md"></i>
+                </span>
+                <strong>Drag and drop your files here</strong>
+                <span>or <span class="upload-browse">browse your device</span></span>
+                <small>PDF, text, images, and common data files · No per-file size limit</small>
+              </div>
+
+              <div class="upload-queue" id="uploadQueue" aria-live="polite">
+                <div class="upload-queue-empty">No files selected yet.</div>
+              </div>
+
+              <div class="upload-actions">
+                <span id="uploadStatus" class="upload-status" role="status">
+                  Files are stored on this server and indexed into your vault.
+                </span>
+                <div class="toolbar-actions">
+                  <button id="clearUploadBtn" class="btn btn-ghost" type="button" disabled>
+                    Clear
+                  </button>
+                  <button id="uploadFilesBtn" class="btn btn-primary" type="button" disabled>
+                    <i data-lucide="upload" class="icon-sm"></i>
+                    <span>Upload and index</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 6: CONTEXT EXPLORER -->
           <section class="view-page" id="view-explorer">
             <div class="surface-card explorer-header-card">
               <div class="section-header">
@@ -1130,7 +1190,7 @@ Files found:
             <div id="contextList" class="context-cards-grid"></div>
           </section>
 
-          <!-- VIEW 6: ACTION & DEADLINE BOARD -->
+          <!-- VIEW 7: ACTION & DEADLINE BOARD -->
           <section class="view-page" id="view-actions">
             <div class="kanban-board">
               <div class="surface-card kanban-column">
@@ -1179,7 +1239,7 @@ Files found:
             </div>
           </section>
 
-          <!-- VIEW 7: LINKS & TELEMETRY -->
+          <!-- VIEW 8: LINKS & TELEMETRY -->
           <section class="view-page" id="view-telemetry">
             <div class="telemetry-split">
               <article class="surface-card">

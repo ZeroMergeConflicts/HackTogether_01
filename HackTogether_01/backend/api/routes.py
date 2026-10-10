@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from pathlib import Path
+import shutil
+from pathlib import Path, PurePosixPath
+from typing import Annotated, Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-from typing import Any
 
 from ..ai.analyzer import AIAnalyzer
-from ..ai.client import AIClient, TEXT_EXTENSIONS
+from ..ai.client import TEXT_EXTENSIONS, AIClient
 from ..database.database import DatabaseManager
+from ..ingestion.scanner import SUPPORTED_EXTENSIONS
 from ..services.ingestion_service import IngestionService
 from ..services.query_service import QueryService
 
@@ -42,6 +44,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
         "processed": 0,
         "failed": 0,
     }
+    app.state.upload_folder = Path(__file__).resolve().parents[3] / ".uploads"
 
     app.add_middleware(
         CORSMiddleware,
@@ -120,6 +123,81 @@ def create_app(db_path: str | None = None) -> FastAPI:
             "failed": result.get("failed", 0),
         }
         return result
+
+    @app.post("/api/upload")
+    async def upload_files(
+        files: Annotated[list[UploadFile], File()],
+    ) -> dict[str, Any]:
+        if not files:
+            raise HTTPException(status_code=400, detail="Select at least one file.")
+
+        upload_folder: Path = app.state.upload_folder
+        validated_files: list[tuple[UploadFile, str, str]] = []
+        for upload in files:
+            filename = PurePosixPath(
+                (upload.filename or "").replace("\\", "/")
+            ).name
+            if not filename or filename in {".", ".."}:
+                raise HTTPException(status_code=400, detail="Invalid filename.")
+
+            extension = Path(filename).suffix.lower()
+            if extension not in SUPPORTED_EXTENSIONS:
+                supported = ", ".join(sorted(SUPPORTED_EXTENSIONS))
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"Unsupported file type: {filename}. "
+                        f"Supported types: {supported}."
+                    ),
+                )
+            validated_files.append((upload, filename, extension))
+
+        upload_folder.mkdir(parents=True, exist_ok=True)
+        saved_files: list[str] = []
+
+        for upload, filename, extension in validated_files:
+            destination = upload_folder / filename
+            suffix = 1
+            while destination.exists():
+                destination = upload_folder / (
+                    f"{Path(filename).stem}_{suffix}{extension}"
+                )
+                suffix += 1
+
+            try:
+                with destination.open("wb") as output:
+                    shutil.copyfileobj(upload.file, output)
+            except OSError as exc:
+                destination.unlink(missing_ok=True)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Could not store {filename}: {exc}",
+                ) from exc
+            saved_files.append(destination.name)
+
+        app.state.selected_folder = str(upload_folder.resolve())
+        app.state.scan_status = {
+            "status": "processing",
+            "total": 0,
+            "processed": 0,
+            "failed": 0,
+        }
+        result = ingestion_service.scan_folder(str(upload_folder.resolve()))
+        app.state.scan_status = {
+            "status": (
+                "completed"
+                if result.get("failed", 0) == 0
+                else "completed_with_failures"
+            ),
+            "total": result.get("total", 0),
+            "processed": result.get("processed", 0),
+            "failed": result.get("failed", 0),
+        }
+        return {
+            "uploaded": saved_files,
+            "folder_path": app.state.selected_folder,
+            "scan": result,
+        }
 
     @app.get("/api/scan/status")
     async def get_scan_status() -> dict[str, int | str | Any]:
