@@ -10,6 +10,7 @@ const state = {
   files: [],
   uploadFiles: [],
   uploading: false,
+  scanning: false,
   context: [],
   relationships: [],
   errors: [],
@@ -1630,9 +1631,21 @@ async function fetchDashboard() {
 }
 
 async function scanFolder() {
+  if (state.scanning) return;
+
   const folderPath = elements.folderPath.value.trim() || ".test";
+  const scanButton = document.getElementById("scanBtn");
   const labelEl = document.getElementById("scanBtnLabel");
+  const progress = document.getElementById("scanProgress");
+  const refreshButton = document.getElementById("refreshBtn");
+  state.scanning = true;
+  scanButton.disabled = true;
+  elements.folderPath.disabled = true;
+  refreshButton.disabled = true;
+  scanButton.setAttribute("aria-busy", "true");
   if (labelEl) labelEl.textContent = "Scanning...";
+  if (progress) progress.hidden = false;
+  document.getElementById("scanPulse")?.classList.add("is-scanning");
   setStatus("Scanning folder...");
   const folderText = document.getElementById("sidebarFolderText");
   if (folderText) folderText.textContent = folderPath;
@@ -1652,6 +1665,13 @@ async function scanFolder() {
     setStatus(error.message);
     showToast(`Scan error: ${error.message}`);
   } finally {
+    state.scanning = false;
+    scanButton.disabled = false;
+    elements.folderPath.disabled = false;
+    refreshButton.disabled = false;
+    scanButton.removeAttribute("aria-busy");
+    if (progress) progress.hidden = true;
+    document.getElementById("scanPulse")?.classList.remove("is-scanning");
     if (labelEl) labelEl.textContent = "Scan Folder";
   }
 }

@@ -698,7 +698,7 @@ Files found:
                 spellcheck="false"
               />
               <button id="scanBtn" class="btn btn-primary" type="button">
-                <i data-lucide="scan-line" class="icon-sm"></i>
+                <i data-lucide="scan-line" class="icon-sm scan-button-icon"></i>
                 <span id="scanBtnLabel">Scan Folder</span>
               </button>
               <button
@@ -709,6 +709,16 @@ Files found:
               >
                 <i data-lucide="refresh-cw" class="icon-sm"></i>
               </button>
+            </div>
+            <div
+              id="scanProgress"
+              class="scan-progress"
+              role="progressbar"
+              aria-label="Scanning folder"
+              aria-valuetext="Scanning files"
+              hidden
+            >
+              <span></span>
             </div>
           </div>
 

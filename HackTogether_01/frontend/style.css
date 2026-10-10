@@ -1598,6 +1598,7 @@ body[data-shell-mode="workspace"] #landingShell {
 }
 
 .navbar-center {
+  position: relative;
   flex: 1;
   max-width: 560px;
 }
@@ -1650,6 +1651,79 @@ body[data-shell-mode="workspace"] #landingShell {
   border-radius: 50%;
   background: var(--accent-emerald);
   box-shadow: 0 0 8px var(--accent-emerald);
+}
+
+.status-dot-pulse.is-scanning {
+  background: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-primary);
+  animation: scan-status-pulse 1.1s ease-in-out infinite;
+}
+
+.scan-progress {
+  position: absolute;
+  right: 10px;
+  bottom: -6px;
+  left: 10px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.12);
+}
+
+.scan-progress[hidden] {
+  display: none;
+}
+
+.scan-progress span {
+  display: block;
+  width: 38%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-primary);
+  animation: scan-progress-sweep 1.35s ease-in-out infinite;
+}
+
+.scan-bar #scanBtn:disabled {
+  cursor: progress;
+  opacity: 0.9;
+  transform: none;
+}
+
+.scan-bar #scanBtn[aria-busy="true"] .scan-button-icon {
+  animation: scan-icon-spin 1.2s linear infinite;
+}
+
+.scan-bar input:disabled {
+  opacity: 0.65;
+}
+
+@keyframes scan-progress-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(280%);
+  }
+}
+
+@keyframes scan-icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes scan-status-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot-pulse.is-scanning,
+  .scan-progress span,
+  .scan-bar #scanBtn[aria-busy="true"] .scan-button-icon {
+    animation-duration: 3s;
+  }
 }
 
 /* BUTTONS & INPUTS */
