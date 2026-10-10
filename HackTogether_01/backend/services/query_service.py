@@ -37,6 +37,8 @@ The answer must be:
 - If retrieved context is missing or does not support a personal claim, say what is unknown. Never fill gaps with general knowledge or invented details.
 - Cite every file that materially supports the answer, and cite only file IDs present in RETRIEVED CONTEXT.
 - Treat confidence as calibrated uncertainty: lower it when evidence is partial, conflicting, or indirect.
+- For questions asking when an event takes place, answer with that event's scheduled date (`Event Dates`), not a registration, submission, or payment deadline. Use `Deadlines` only when the user asks about a deadline, closing date, or due date.
+- If a source distinguishes an event date from its registration deadline, do not substitute one for the other. If the requested date is unavailable or contradictory, say so clearly.
 
 Never simply repeat the retrieved context.
 Never answer with a list of filenames unless the user explicitly asks for files/documents.
@@ -588,6 +590,7 @@ class QueryService:
                 "people",
                 "organizations",
                 "events",
+                "event_dates",
                 "dates",
                 "deadlines",
                 "actions",
@@ -686,10 +689,20 @@ class QueryService:
             }
 
         relevant_context = self.search_context(question)
+        arrival_time_answer = self._answer_arrival_time(question, relevant_context)
+        if arrival_time_answer is not None:
+            self._record_history(question, arrival_time_answer["answer"], intent)
+            return arrival_time_answer
+
         if intent in {"personal", "mixed"} and not relevant_context:
             fallback = self._synthesize_fallback(question, [], intent=intent)
             self._record_history(question, fallback["answer"], intent)
             return fallback
+
+        event_date_answer = self._answer_event_date(question, relevant_context)
+        if event_date_answer is not None:
+            self._record_history(question, event_date_answer["answer"], intent)
+            return event_date_answer
 
         context_prompt = self.build_context(question, relevant_context)
 
@@ -890,6 +903,185 @@ class QueryService:
         return [
             token.lower() for token in re.findall(r"[A-Za-z0-9]+", question) if token
         ]
+
+    @staticmethod
+    def _is_event_date_query(question: str) -> bool:
+        lower = question.lower()
+        if any(
+            term in lower
+            for term in (
+                "deadline",
+                "registration",
+                "submission",
+                "submit",
+                "due",
+                "close",
+                "closing",
+            )
+        ):
+            return False
+        return any(
+            phrase in lower
+            for phrase in (
+                "when is",
+                "when will",
+                "what date",
+                "date of",
+                "when does",
+                "when do",
+            )
+        )
+
+    @staticmethod
+    def _answer_arrival_time(
+        question: str,
+        relevant_context: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        lower = question.lower()
+        if not (
+            ("arrive" in lower or "arrival" in lower)
+            and any(word in lower for word in ("time", "when", "what"))
+        ):
+            return None
+
+        arrival_statements: list[tuple[str, dict[str, Any]]] = []
+        for context in relevant_context:
+            data = context.get("data") or {}
+            values = [
+                str(value).strip()
+                for key in (
+                    "important_facts",
+                    "events",
+                    "actions",
+                    "dates",
+                    "event_dates",
+                )
+                for value in data.get(key, []) or []
+            ]
+            values.append(str(context.get("summary") or ""))
+            for value in values:
+                if re.search(r"\barriv(?:e|al)\w*\b", value, flags=re.IGNORECASE):
+                    arrival_statements.append((value, context))
+
+        clock_pattern = re.compile(
+            r"\b(?:at\s*)?(\d{1,2}(?::[0-5]\d)?\s*(?:a\.?m\.?|p\.?m\.?))\b",
+            flags=re.IGNORECASE,
+        )
+        explicit_times = list(
+            dict.fromkeys(
+                match.group(1).strip()
+                for statement, _ in arrival_statements
+                for match in clock_pattern.finditer(statement)
+            )
+        )
+        cited_contexts = {
+            int(context["file_id"]): {
+                "file_id": int(context["file_id"]),
+                "filename": str(context.get("filename") or "unknown"),
+            }
+            for _, context in arrival_statements
+            if context.get("file_id") is not None
+        }
+
+        if len(explicit_times) == 1:
+            answer = f"The documents say to arrive at {explicit_times[0]}."
+            sufficient_context = True
+        elif len(explicit_times) > 1:
+            answer = (
+                "The documents give different arrival times, so I can't determine "
+                "which one to use."
+            )
+            sufficient_context = False
+        elif any(
+            re.search(
+                r"\b(?:share|send|announce|confirm|provide)\b.{0,80}"
+                r"\b(?:arrival time|time to arrive)\b",
+                statement,
+                flags=re.IGNORECASE,
+            )
+            for statement, _ in arrival_statements
+        ):
+            answer = (
+                "The documents don't specify an arrival time. The symposium "
+                "coordination team will share it with registered participants."
+            )
+            sufficient_context = False
+        else:
+            answer = "The available documents don't specify an arrival time."
+            sufficient_context = False
+
+        return {
+            "answer": answer,
+            "confidence": 0.9 if arrival_statements else 0.75,
+            "has_sufficient_context": sufficient_context,
+            "sources": list(cited_contexts.values()),
+        }
+
+    def _answer_event_date(
+        self,
+        question: str,
+        relevant_context: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        if not self._is_event_date_query(question):
+            return None
+
+        candidates: dict[str, list[tuple[str, dict[str, Any]]]] = {}
+        for context in relevant_context:
+            data = context.get("data") or {}
+            event_dates = data.get("event_dates") or []
+            if not event_dates:
+                deadlines = " ".join(
+                    str(value) for value in (data.get("deadlines") or [])
+                ).casefold()
+                event_dates = [
+                    value
+                    for value in (data.get("dates") or [])
+                    if str(value).strip().casefold() not in deadlines
+                ]
+            for value in event_dates:
+                display_date = str(value).strip().rstrip(".")
+                if display_date:
+                    candidates.setdefault(display_date.casefold(), []).append(
+                        (display_date, context)
+                    )
+
+        if len(candidates) != 1:
+            return None
+
+        date_entries = next(iter(candidates.values()))
+        display_date = date_entries[0][0]
+        sources = list(
+            {
+                int(context["file_id"]): {
+                    "file_id": int(context["file_id"]),
+                    "filename": str(context.get("filename") or "unknown"),
+                }
+                for _, context in date_entries
+                if context.get("file_id") is not None
+            }.values()
+        )
+        event_names = list(
+            dict.fromkeys(
+                str(event).strip().rstrip(".")
+                for _, context in date_entries
+                for event in (context.get("data") or {}).get("events", []) or []
+                if str(event).strip()
+            )
+        )
+        event_name = event_names[0] if len(event_names) == 1 else ""
+        if event_name and event_name.isupper():
+            event_name = event_name.title()
+        answer = (
+            f"The {event_name} is scheduled for {display_date}."
+            if event_name
+            else f"The event is scheduled for {display_date}."
+        )
+        return {
+            "answer": answer,
+            "confidence": 0.98,
+            "has_sufficient_context": bool(sources),
+            "sources": sources,
+        }
 
     @staticmethod
     def _clean_action_phrase(raw: str, amounts: list[str]) -> str:

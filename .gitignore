@@ -159,6 +159,7 @@ venv.bak/
 
 # Custom folder
 .test/
+.uploads/
 
 # Custom file
 contextvault.db

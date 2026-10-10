@@ -38,10 +38,9 @@
           </a>
 
           <nav class="landing-nav-links">
-            <a href="#features-bento" class="landing-anchor">Modules</a>
-            <a href="#comparison-section" class="landing-anchor">Why ContextVault</a>
-            <a href="#pipeline-section" class="landing-anchor">Architecture</a>
-            <a href="#workspace-modules" class="landing-anchor">Workspace</a>
+            <a href="#answer-journey" class="landing-anchor">How it works</a>
+            <a href="#features-bento" class="landing-anchor">Features</a>
+            <a href="#get-started" class="landing-anchor">Get started</a>
           </nav>
 
           <div class="landing-nav-Right">
@@ -66,9 +65,9 @@
         <div class="hero-container">
           <div class="hero-pill-banner">
             <span class="pill-spark">✦ NEW</span>
-            <span>ContextVault Engine v0.2 — Multimodal Gemini 2.5 Flash + SHA-256 Indexing</span>
-            <button class="pill-link" data-nav-target="ask" type="button">
-              Try AI Studio →
+            <span>Private-by-default files · Grounded answers · Gemini-powered insights</span>
+            <button class="pill-link" data-nav-target="upload" type="button">
+              Add your files →
             </button>
           </div>
 
@@ -99,14 +98,6 @@
             >
               <i data-lucide="sparkles" class="icon-sm"></i>
               <span>Ask ContextVault AI</span>
-            </button>
-            <button
-              class="btn btn-ghost btn-lg"
-              id="heroQuickScanBtn"
-              type="button"
-            >
-              <i data-lucide="scan-line" class="icon-sm"></i>
-              <span>Scan .test Vault Now</span>
             </button>
           </div>
 
@@ -259,100 +250,15 @@
         </div>
       </section>
 
-      <!-- MODULE 2: RETRIEVAL VS. REASONING INTERACTIVE COMPARISON -->
-      <section class="landing-section" id="comparison-section">
-        <div class="section-container">
-          <div class="section-title-block">
-            <span class="mono-label">THE CORE PARADIGM SHIFT</span>
-            <h2>Retrieval is not understanding.</h2>
-            <p>
-              Traditional tools dump matching filenames. ContextVault reasons across
-              multiple documents, filters out noise, and separates internal evidence
-              from the human-readable answer.
-            </p>
-          </div>
-
-          <div class="comparison-grid">
-            <article class="surface-card comp-card bad-card">
-              <div class="comp-header">
-                <span class="pill failed">✕ LEGACY DOCUMENT SEARCH</span>
-                <span class="mono-label">RAW FILE DUMPING</span>
-              </div>
-              <div class="comp-prompt">
-                User: “What do I still need to do for the Tech Symposium?”
-              </div>
-              <pre class="comp-output bad-output">
-The relevant context suggests:
-Review symposium whatsapp.
-Review math.
-
-Files found:
-- symposium_whatsapp.txt
-- math.txt
-- a.txt
-- b.txt
-- symposium_notice.txt</pre>
-              <ul class="comp-notes">
-                <li>Repeats filenames instead of answering the question</li>
-                <li>Leaks unrelated files (<code>math.txt</code>, <code>a.txt</code>)</li>
-                <li>Cannot tell which actions are completed vs. pending</li>
-              </ul>
-            </article>
-
-            <article class="surface-card comp-card good-card">
-              <div class="comp-header">
-                <span class="pill analyzed">✓ CONTEXTVAULT REASONING ENGINE</span>
-                <span class="mono-label">CROSS-FILE SYNTHESIS</span>
-              </div>
-              <div class="comp-prompt">
-                User: “What do I still need to do for the Tech Symposium?”
-              </div>
-              <div class="comp-output good-output">
-                <p>
-                  For the <strong>Annual Tech Symposium 2026</strong>, you still need to:
-                </p>
-                <ul>
-                  <li>Submit the project abstract before the registration deadline.</li>
-                  <li>Pay the ₹500 registration fee (if not already paid).</li>
-                </ul>
-                <p class="muted-line">Registration closes on 30 September 2026.</p>
-                <div class="comp-sources-strip">
-                  <span class="mono-label">VERIFIED SOURCES:</span>
-                  <span
-                    class="file-ref-chip"
-                    data-filename="symposium_notice.txt"
-                  >
-                    <i data-lucide="file-code-2" class="icon-xs"></i>
-                    symposium_notice.txt
-                  </span>
-                  <span
-                    class="file-ref-chip"
-                    data-filename="symposium_whatsapp.txt"
-                  >
-                    <i data-lucide="file-code-2" class="icon-xs"></i>
-                    symposium_whatsapp.txt
-                  </span>
-                </div>
-              </div>
-              <ul class="comp-notes good-notes">
-                <li>Synthesizes facts across notices, notes, and receipts</li>
-                <li>Filters out irrelevant files automatically</li>
-                <li>Attaches hoverable, clickable source citations separately</li>
-              </ul>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <!-- MODULE 3: 6-CARD MODULAR BENTO FEATURE GRID -->
+      <!-- PRODUCT FEATURES -->
       <section class="landing-section" id="features-bento">
         <div class="section-container">
           <div class="section-title-block">
-            <span class="mono-label">MODULAR PRODUCT ARCHITECTURE</span>
-            <h2>Engineered like a precision instrument.</h2>
+            <span class="mono-label">BUILT AROUND YOUR EVIDENCE</span>
+            <h2>Everything connected to its source.</h2>
             <p>
-              Every subsystem in ContextVault is modularized—from deterministic
-              SHA-256 ingestion to provider-independent Gemini reasoning.
+              Explore the tools that turn scattered documents into useful context,
+              without losing sight of where each detail came from.
             </p>
           </div>
 
@@ -426,102 +332,45 @@ Files found:
         </div>
       </section>
 
-      <!-- MODULE 4: END-TO-END ARCHITECTURE PIPELINE -->
-      <section class="landing-section" id="pipeline-section">
+      <!-- GET STARTED -->
+      <section class="landing-section landing-start-section" id="get-started">
         <div class="section-container">
           <div class="section-title-block">
-            <span class="mono-label">SYSTEM PIPELINE</span>
-            <h2>From raw filesystem to grounded intelligence.</h2>
+            <span class="mono-label">YOUR FILES, WORKING TOGETHER</span>
+            <h2>Get to your answer in three steps.</h2>
+            <p>No setup beyond choosing the files you want ContextVault to understand.</p>
           </div>
 
-          <div class="pipeline-steps-grid">
-            <div class="surface-card pipe-step-card">
-              <div class="step-num">01</div>
-              <h4>FolderScanner & SHA-256</h4>
-              <p>
-                Discovers `.pdf`, `.png`, `.jpg`, `.txt`, `.md`, `.csv`, and `.json`
-                files and computes cryptographic hashes to detect modifications.
-              </p>
-              <span class="mono-label">backend/ingestion/scanner.py</span>
-            </div>
-
-            <div class="surface-card pipe-step-card">
-              <div class="step-num">02</div>
-              <h4>AIAnalyzer & AIClient</h4>
-              <p>
-                Sends new or modified files to Gemini 2.5 Flash with strict JSON schema
-                enforcement to extract events, deadlines, actions, and amounts.
-              </p>
-              <span class="mono-label">backend/ai/analyzer.py</span>
-            </div>
-
-            <div class="surface-card pipe-step-card">
-              <div class="step-num">03</div>
-              <h4>SQLite Relational Graph</h4>
-              <p>
-                Persists files, structured contexts, entities, and cross-document
-                relationships (`same_topic`, confidence scores, shared entities).
-              </p>
-              <span class="mono-label">backend/database/database.py</span>
-            </div>
-
-            <div class="surface-card pipe-step-card">
-              <div class="step-num">04</div>
-              <h4>Intent & Query Synthesis</h4>
-              <p>
-                Classifies user intent, scores relevant records, deduplicates facts,
-                and returns natural-language answers with separated source citations.
-              </p>
-              <span class="mono-label">backend/services/query_service.py</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- MODULE 5: WORKSPACE MODULE LAUNCHER -->
-      <section class="landing-section" id="workspace-modules">
-        <div class="section-container">
-          <div class="section-title-block">
-            <span class="mono-label">7 SPECIALIZED WORKSPACE MODULES</span>
-            <h2>Jump directly into any module.</h2>
-            <p>Click any module below to launch directly into that workspace view.</p>
+          <div class="landing-start-grid">
+            <article class="landing-start-card">
+              <span class="landing-start-number">01</span>
+              <i data-lucide="files" class="icon-md"></i>
+              <h3>Bring your files</h3>
+              <p>Drop documents into your vault or choose a folder to scan.</p>
+            </article>
+            <article class="landing-start-card">
+              <span class="landing-start-number">02</span>
+              <i data-lucide="workflow" class="icon-md"></i>
+              <h3>Connect the context</h3>
+              <p>Related details are organized with their original sources.</p>
+            </article>
+            <article class="landing-start-card">
+              <span class="landing-start-number">03</span>
+              <i data-lucide="message-circle-question" class="icon-md"></i>
+              <h3>Ask with confidence</h3>
+              <p>Get useful answers with evidence you can open and verify.</p>
+            </article>
           </div>
 
-          <div class="module-launcher-grid">
-            <button class="surface-card module-launch-card" data-nav-target="dashboard" type="button">
-              <i data-lucide="layout-dashboard" class="icon-md indigo-text"></i>
-              <strong>01. Command Overview</strong>
-              <span>KPI metrics, live mini-graph, priority radar & quick ask</span>
+          <div class="landing-start-actions">
+            <button class="btn btn-primary btn-lg btn-glow" data-nav-target="upload" type="button">
+              <i data-lucide="cloud-upload" class="icon-sm"></i>
+              <span>Upload your files</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
             </button>
-
-            <button class="surface-card module-launch-card" data-nav-target="ask" type="button">
-              <i data-lucide="sparkles" class="icon-md violet-text"></i>
-              <strong>02. Ask AI Studio</strong>
-              <span>Conversational synthesis with confidence & source verification</span>
-            </button>
-
-            <button class="surface-card module-launch-card" data-nav-target="actions" type="button">
-              <i data-lucide="check-square" class="icon-md amber-text"></i>
-              <strong>03. Action & Deadline Board</strong>
-              <span>4-column Kanban matrix for tasks, dates, completed items & fees</span>
-            </button>
-
-            <button class="surface-card module-launch-card" data-nav-target="graph" type="button">
-              <i data-lucide="network" class="icon-md cyan-text"></i>
-              <strong>04. Synaptic Knowledge Graph</strong>
-              <span>Interactive force-directed canvas with node drag & file peek</span>
-            </button>
-
-            <button class="surface-card module-launch-card" data-nav-target="files" type="button">
-              <i data-lucide="folder-kanban" class="icon-md emerald-text"></i>
-              <strong>05. Vault Files Registry</strong>
-              <span>Searchable SHA-256 file cards with status & size telemetry</span>
-            </button>
-
-            <button class="surface-card module-launch-card" data-nav-target="explorer" type="button">
-              <i data-lucide="database" class="icon-md rose-text"></i>
-              <strong>06. Deep Context Explorer</strong>
-              <span>Category-filtered entity cloud and structured schema cards</span>
+            <button class="btn btn-secondary btn-lg" data-nav-target="ask" type="button">
+              <i data-lucide="sparkles" class="icon-sm"></i>
+              <span>Explore AI Studio</span>
             </button>
           </div>
         </div>
@@ -634,6 +483,12 @@ Files found:
                 </span>
                 <span class="nav-count" id="navBadgeFiles">0</span>
               </a>
+              <a href="#/upload" class="nav-item" data-route="upload">
+                <span class="nav-item-left">
+                  <i data-lucide="cloud-upload" class="nav-svg"></i>
+                  <span>Upload Files</span>
+                </span>
+              </a>
               <a href="#/explorer" class="nav-item" data-route="explorer">
                 <span class="nav-item-left">
                   <i data-lucide="database" class="nav-svg"></i>
@@ -692,7 +547,7 @@ Files found:
                 spellcheck="false"
               />
               <button id="scanBtn" class="btn btn-primary" type="button">
-                <i data-lucide="scan-line" class="icon-sm"></i>
+                <i data-lucide="scan-line" class="icon-sm scan-button-icon"></i>
                 <span id="scanBtnLabel">Scan Folder</span>
               </button>
               <button
@@ -703,6 +558,16 @@ Files found:
               >
                 <i data-lucide="refresh-cw" class="icon-sm"></i>
               </button>
+            </div>
+            <div
+              id="scanProgress"
+              class="scan-progress"
+              role="progressbar"
+              aria-label="Scanning folder"
+              aria-valuetext="Scanning files"
+              hidden
+            >
+              <span></span>
             </div>
           </div>
 
@@ -1094,7 +959,61 @@ Files found:
             </div>
           </section>
 
-          <!-- VIEW 5: CONTEXT EXPLORER -->
+          <!-- VIEW 5: UPLOAD FILES -->
+          <section class="view-page" id="view-upload">
+            <div class="surface-card upload-page-card">
+              <div class="section-header border-bottom">
+                <div>
+                  <span class="mono-label">ADD SOURCES TO YOUR VAULT</span>
+                  <h3>Upload files</h3>
+                </div>
+                <span class="badge badge-emerald">Private to this server</span>
+              </div>
+
+              <div
+                class="upload-dropzone"
+                id="uploadDropzone"
+                role="button"
+                tabindex="0"
+                aria-label="Choose files or drag and drop them to upload"
+              >
+                <input
+                  id="uploadInput"
+                  class="upload-input"
+                  type="file"
+                  multiple
+                  accept=".txt,.md,.csv,.json,.html,.htm,.pdf,.png,.jpg,.jpeg,.gif,.bmp,.webp,.svg"
+                />
+                <span class="upload-icon-wrap">
+                  <i data-lucide="cloud-upload" class="icon-md"></i>
+                </span>
+                <strong>Drag and drop your files here</strong>
+                <span>or <span class="upload-browse">browse your device</span></span>
+                <small>PDF, text, images, and common data files · No per-file size limit</small>
+              </div>
+
+              <div class="upload-queue" id="uploadQueue" aria-live="polite">
+                <div class="upload-queue-empty">No files selected yet.</div>
+              </div>
+
+              <div class="upload-actions">
+                <span id="uploadStatus" class="upload-status" role="status">
+                  Files are stored on this server and indexed into your vault.
+                </span>
+                <div class="toolbar-actions">
+                  <button id="clearUploadBtn" class="btn btn-ghost" type="button" disabled>
+                    Clear
+                  </button>
+                  <button id="uploadFilesBtn" class="btn btn-primary" type="button" disabled>
+                    <i data-lucide="upload" class="icon-sm"></i>
+                    <span>Upload and index</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 6: CONTEXT EXPLORER -->
           <section class="view-page" id="view-explorer">
             <div class="surface-card explorer-header-card">
               <div class="section-header">
@@ -1130,7 +1049,7 @@ Files found:
             <div id="contextList" class="context-cards-grid"></div>
           </section>
 
-          <!-- VIEW 6: ACTION & DEADLINE BOARD -->
+          <!-- VIEW 7: ACTION & DEADLINE BOARD -->
           <section class="view-page" id="view-actions">
             <div class="kanban-board">
               <div class="surface-card kanban-column">
@@ -1179,7 +1098,7 @@ Files found:
             </div>
           </section>
 
-          <!-- VIEW 7: LINKS & TELEMETRY -->
+          <!-- VIEW 8: LINKS & TELEMETRY -->
           <section class="view-page" id="view-telemetry">
             <div class="telemetry-split">
               <article class="surface-card">

@@ -8,6 +8,9 @@ const state = {
   currentRoute: "welcome",
   selectedFolder: ".test",
   files: [],
+  uploadFiles: [],
+  uploading: false,
+  scanning: false,
   context: [],
   relationships: [],
   errors: [],
@@ -40,6 +43,7 @@ const VIEW_META = {
   actions: { eyebrow: "WORKSPACE / TASK MATRIX", title: "Action & Deadline Board" },
   graph: { eyebrow: "WORKSPACE / TOPOLOGY", title: "Synaptic Knowledge Graph" },
   files: { eyebrow: "REPOSITORY / REGISTRY", title: "Vault Files" },
+  upload: { eyebrow: "REPOSITORY / ADD SOURCES", title: "Upload Files" },
   explorer: { eyebrow: "REPOSITORY / EXTRACTIONS", title: "Context Explorer" },
   telemetry: { eyebrow: "REPOSITORY / DIAGNOSTICS", title: "Links & System Telemetry" },
 };
@@ -172,7 +176,8 @@ function showToast(message) {
 
 async function apiRequest(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers:
+      options.body instanceof FormData ? {} : { "Content-Type": "application/json" },
     ...options,
   });
 
@@ -319,35 +324,100 @@ function renderAnswerJourney(demo) {
 }
 
 function initializeLandingMotion() {
-  if (
-    !("IntersectionObserver" in window) ||
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  ) {
-    return;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) return;
+
+  if ("IntersectionObserver" in window) {
+    const targets = document.querySelectorAll(
+      ".answer-journey-section .journey-header, .section-title-block, .product-bento-grid > *, .landing-start-grid > *, .landing-start-actions, .landing-footer .footer-inner",
+    );
+    const groupOrder = new Map();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -6% 0px", threshold: 0.12 },
+    );
+
+    targets.forEach((target) => {
+      const group = target.parentElement;
+      const order = groupOrder.get(group) || 0;
+      groupOrder.set(group, order + 1);
+      target.style.setProperty("--motion-delay", `${Math.min(order, 5) * 65}ms`);
+      target.classList.add("scroll-reveal");
+      observer.observe(target);
+    });
   }
 
-  const targets = document.querySelectorAll(
-    ".answer-journey-section .journey-header, .section-title-block, .comparison-grid > *, .product-bento-grid > *, .pipeline-steps-grid > *, .module-launcher-grid > *, .landing-footer .footer-inner",
-  );
-  const groupOrder = new Map();
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-visible");
-        observer.unobserve(entry.target);
-      });
-    },
-    { rootMargin: "0px 0px -6% 0px", threshold: 0.12 },
-  );
+  if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
-  targets.forEach((target) => {
-    const group = target.parentElement;
-    const order = groupOrder.get(group) || 0;
-    groupOrder.set(group, order + 1);
-    target.style.setProperty("--motion-delay", `${Math.min(order, 5) * 65}ms`);
-    target.classList.add("scroll-reveal");
-    observer.observe(target);
+  const landing = document.querySelector(".landing-shell");
+  const showcase = landing?.querySelector(".hero-showcase-frame");
+  if (!landing) return;
+  let frameRequest = 0;
+  landing.addEventListener("pointermove", (event) => {
+    if (frameRequest) cancelAnimationFrame(frameRequest);
+    frameRequest = requestAnimationFrame(() => {
+      landing.style.setProperty("--cursor-x", `${event.clientX}px`);
+      landing.style.setProperty("--cursor-y", `${event.clientY}px`);
+
+      const target = event.target.closest(
+        ".hero-showcase-frame, .bento-feature, .landing-start-card, .journey-visual",
+      );
+      if (target && landing.contains(target)) {
+        const bounds = target.getBoundingClientRect();
+        target.style.setProperty(
+          "--pointer-x",
+          `${(((event.clientX - bounds.left) / bounds.width) * 100).toFixed(1)}%`,
+        );
+        target.style.setProperty(
+          "--pointer-y",
+          `${(((event.clientY - bounds.top) / bounds.height) * 100).toFixed(1)}%`,
+        );
+        if (target === showcase) {
+          const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
+          const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
+          target.style.setProperty("--tilt-x", `${(-vertical * 4).toFixed(2)}deg`);
+          target.style.setProperty("--tilt-y", `${(horizontal * 4).toFixed(2)}deg`);
+        }
+      }
+      if (showcase && target !== showcase) {
+        showcase.style.setProperty("--tilt-x", "0deg");
+        showcase.style.setProperty("--tilt-y", "0deg");
+      }
+      frameRequest = 0;
+    });
+  });
+  landing.addEventListener("pointerout", (event) => {
+    const target = event.target.closest(
+      ".hero-showcase-frame, .bento-feature, .landing-start-card, .journey-visual",
+    );
+    if (
+      !target ||
+      (event.relatedTarget instanceof Node && target.contains(event.relatedTarget))
+    ) {
+      return;
+    }
+    target.style.setProperty("--pointer-x", "50%");
+    target.style.setProperty("--pointer-y", "50%");
+    if (target === showcase) {
+      target.style.setProperty("--tilt-x", "0deg");
+      target.style.setProperty("--tilt-y", "0deg");
+    }
+  });
+  landing.addEventListener("pointerleave", () => {
+    if (frameRequest) cancelAnimationFrame(frameRequest);
+    frameRequest = 0;
+    landing.style.setProperty("--cursor-x", "-1000px");
+    landing.style.setProperty("--cursor-y", "-1000px");
+    if (showcase) {
+      showcase.style.setProperty("--tilt-x", "0deg");
+      showcase.style.setProperty("--tilt-y", "0deg");
+    }
   });
 }
 
@@ -1626,9 +1696,21 @@ async function fetchDashboard() {
 }
 
 async function scanFolder() {
+  if (state.scanning) return;
+
   const folderPath = elements.folderPath.value.trim() || ".test";
+  const scanButton = document.getElementById("scanBtn");
   const labelEl = document.getElementById("scanBtnLabel");
+  const progress = document.getElementById("scanProgress");
+  const refreshButton = document.getElementById("refreshBtn");
+  state.scanning = true;
+  scanButton.disabled = true;
+  elements.folderPath.disabled = true;
+  refreshButton.disabled = true;
+  scanButton.setAttribute("aria-busy", "true");
   if (labelEl) labelEl.textContent = "Scanning...";
+  if (progress) progress.hidden = false;
+  document.getElementById("scanPulse")?.classList.add("is-scanning");
   setStatus("Scanning folder...");
   const folderText = document.getElementById("sidebarFolderText");
   if (folderText) folderText.textContent = folderPath;
@@ -1648,7 +1730,110 @@ async function scanFolder() {
     setStatus(error.message);
     showToast(`Scan error: ${error.message}`);
   } finally {
+    state.scanning = false;
+    scanButton.disabled = false;
+    elements.folderPath.disabled = false;
+    refreshButton.disabled = false;
+    scanButton.removeAttribute("aria-busy");
+    if (progress) progress.hidden = true;
+    document.getElementById("scanPulse")?.classList.remove("is-scanning");
     if (labelEl) labelEl.textContent = "Scan Folder";
+  }
+}
+
+function renderUploadQueue() {
+  const queue = document.getElementById("uploadQueue");
+  const uploadButton = document.getElementById("uploadFilesBtn");
+  const clearButton = document.getElementById("clearUploadBtn");
+  if (!queue || !uploadButton || !clearButton) return;
+
+  if (state.uploadFiles.length === 0) {
+    queue.innerHTML = '<div class="upload-queue-empty">No files selected yet.</div>';
+  } else {
+    queue.innerHTML = state.uploadFiles
+      .map(
+        (file, index) => `
+          <div class="upload-file-row">
+            <i data-lucide="${iconForExtension(file.name)}" class="icon-sm"></i>
+            <span class="upload-file-name">${escapeHtml(file.name)}</span>
+            <small>${formatFileSize(file.size)}</small>
+            <button
+              class="btn btn-icon-only upload-remove-file"
+              type="button"
+              data-remove-upload="${index}"
+              aria-label="Remove ${escapeHtml(file.name)}"
+              title="Remove file"
+            >
+              <i data-lucide="x" class="icon-xs"></i>
+            </button>
+          </div>
+        `,
+      )
+      .join("");
+  }
+
+  uploadButton.disabled = state.uploadFiles.length === 0 || state.uploading;
+  clearButton.disabled = state.uploadFiles.length === 0 || state.uploading;
+  refreshIcons();
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function addUploadFiles(files) {
+  const existing = new Set(
+    state.uploadFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`),
+  );
+  for (const file of files) {
+    const key = `${file.name}:${file.size}:${file.lastModified}`;
+    if (!existing.has(key)) {
+      state.uploadFiles.push(file);
+      existing.add(key);
+    }
+  }
+  renderUploadQueue();
+}
+
+async function uploadSelectedFiles() {
+  if (state.uploadFiles.length === 0 || state.uploading) return;
+
+  const status = document.getElementById("uploadStatus");
+  const formData = new FormData();
+  state.uploadFiles.forEach((file) => formData.append("files", file, file.name));
+  state.uploading = true;
+  if (status) status.textContent = "Uploading files and indexing your vault...";
+  renderUploadQueue();
+
+  try {
+    const payload = await apiRequest("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+    elements.folderPath.value = payload.folder_path;
+    const scan = payload.scan;
+    const indexed = Math.max(0, Number(scan.processed) - Number(scan.failed));
+    const message = `${payload.uploaded.length} file${payload.uploaded.length === 1 ? "" : "s"} uploaded; ${indexed} indexed, ${scan.failed} failed.`;
+    if (status) status.textContent = message;
+    state.uploadFiles = [];
+    document.getElementById("uploadInput").value = "";
+    try {
+      await fetchDashboard();
+    } catch (error) {
+      if (status) {
+        status.textContent = `${message} Refresh failed: ${error.message}`;
+      }
+    }
+    setStatus(message);
+    showToast(message);
+  } catch (error) {
+    if (status) status.textContent = `Upload failed: ${error.message}`;
+    showToast(`Upload failed: ${error.message}`);
+  } finally {
+    state.uploading = false;
+    renderUploadQueue();
   }
 }
 
@@ -1759,6 +1944,13 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const removeUpload = event.target.closest("[data-remove-upload]");
+  if (removeUpload) {
+    state.uploadFiles.splice(Number(removeUpload.dataset.removeUpload), 1);
+    renderUploadQueue();
+    return;
+  }
+
   const preset = event.target.closest(".suggestion-chip");
   if (preset && preset.dataset.query) {
     askContextVault(preset.dataset.query);
@@ -1773,9 +1965,40 @@ document.addEventListener("click", (event) => {
 });
 
 document.getElementById("scanBtn").addEventListener("click", scanFolder);
-document.getElementById("heroQuickScanBtn")?.addEventListener("click", () => {
-  navigateTo("dashboard");
-  scanFolder();
+const uploadInput = document.getElementById("uploadInput");
+const uploadDropzone = document.getElementById("uploadDropzone");
+uploadInput.addEventListener("change", () => {
+  addUploadFiles(uploadInput.files);
+  uploadInput.value = "";
+});
+uploadDropzone.addEventListener("click", (event) => {
+  if (!event.target.closest(".upload-input")) uploadInput.click();
+});
+uploadDropzone.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    uploadInput.click();
+  }
+});
+for (const eventName of ["dragenter", "dragover"]) {
+  uploadDropzone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    uploadDropzone.classList.add("is-dragging");
+  });
+}
+for (const eventName of ["dragleave", "drop"]) {
+  uploadDropzone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    uploadDropzone.classList.remove("is-dragging");
+  });
+}
+uploadDropzone.addEventListener("drop", (event) => {
+  addUploadFiles(event.dataTransfer.files);
+});
+document.getElementById("uploadFilesBtn").addEventListener("click", uploadSelectedFiles);
+document.getElementById("clearUploadBtn").addEventListener("click", () => {
+  state.uploadFiles = [];
+  renderUploadQueue();
 });
 document.getElementById("refreshBtn").addEventListener("click", () => {
   fetchDashboard().then(() => showToast("Vault state synced"));
