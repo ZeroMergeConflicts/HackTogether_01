@@ -324,35 +324,67 @@ function renderAnswerJourney(demo) {
 }
 
 function initializeLandingMotion() {
-  if (
-    !("IntersectionObserver" in window) ||
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  ) {
-    return;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) return;
+
+  if ("IntersectionObserver" in window) {
+    const targets = document.querySelectorAll(
+      ".answer-journey-section .journey-header, .section-title-block, .product-bento-grid > *, .landing-start-grid > *, .landing-start-actions, .landing-footer .footer-inner",
+    );
+    const groupOrder = new Map();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -6% 0px", threshold: 0.12 },
+    );
+
+    targets.forEach((target) => {
+      const group = target.parentElement;
+      const order = groupOrder.get(group) || 0;
+      groupOrder.set(group, order + 1);
+      target.style.setProperty("--motion-delay", `${Math.min(order, 5) * 65}ms`);
+      target.classList.add("scroll-reveal");
+      observer.observe(target);
+    });
   }
 
-  const targets = document.querySelectorAll(
-    ".answer-journey-section .journey-header, .section-title-block, .comparison-grid > *, .product-bento-grid > *, .pipeline-steps-grid > *, .module-launcher-grid > *, .landing-footer .footer-inner",
-  );
-  const groupOrder = new Map();
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-visible");
-        observer.unobserve(entry.target);
-      });
-    },
-    { rootMargin: "0px 0px -6% 0px", threshold: 0.12 },
-  );
+  if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
-  targets.forEach((target) => {
-    const group = target.parentElement;
-    const order = groupOrder.get(group) || 0;
-    groupOrder.set(group, order + 1);
-    target.style.setProperty("--motion-delay", `${Math.min(order, 5) * 65}ms`);
-    target.classList.add("scroll-reveal");
-    observer.observe(target);
+  const showcase = document.querySelector(".hero-showcase-frame");
+  if (!showcase) return;
+
+  let frameRequest = 0;
+  showcase.addEventListener("pointermove", (event) => {
+    if (frameRequest) cancelAnimationFrame(frameRequest);
+    frameRequest = requestAnimationFrame(() => {
+      const bounds = showcase.getBoundingClientRect();
+      const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
+      const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
+      showcase.style.setProperty("--tilt-x", `${(-vertical * 3).toFixed(2)}deg`);
+      showcase.style.setProperty("--tilt-y", `${(horizontal * 3).toFixed(2)}deg`);
+      showcase.style.setProperty(
+        "--pointer-x",
+        `${((event.clientX - bounds.left) / bounds.width) * 100}%`,
+      );
+      showcase.style.setProperty(
+        "--pointer-y",
+        `${((event.clientY - bounds.top) / bounds.height) * 100}%`,
+      );
+      frameRequest = 0;
+    });
+  });
+  showcase.addEventListener("pointerleave", () => {
+    if (frameRequest) cancelAnimationFrame(frameRequest);
+    frameRequest = 0;
+    showcase.style.setProperty("--tilt-x", "0deg");
+    showcase.style.setProperty("--tilt-y", "0deg");
+    showcase.style.setProperty("--pointer-x", "50%");
+    showcase.style.setProperty("--pointer-y", "50%");
   });
 }
 
@@ -1934,10 +1966,6 @@ document.getElementById("uploadFilesBtn").addEventListener("click", uploadSelect
 document.getElementById("clearUploadBtn").addEventListener("click", () => {
   state.uploadFiles = [];
   renderUploadQueue();
-});
-document.getElementById("heroQuickScanBtn")?.addEventListener("click", () => {
-  navigateTo("dashboard");
-  scanFolder();
 });
 document.getElementById("refreshBtn").addEventListener("click", () => {
   fetchDashboard().then(() => showToast("Vault state synced"));

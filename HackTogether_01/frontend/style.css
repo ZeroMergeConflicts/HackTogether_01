@@ -402,6 +402,9 @@ body[data-shell-mode="workspace"] #landingShell {
   position: relative;
   width: 100%;
   text-align: left;
+  transform: perspective(1400px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 220ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  transform-style: preserve-3d;
 }
 
 .showcase-glow {
@@ -602,6 +605,76 @@ body[data-shell-mode="workspace"] #landingShell {
 /* LANDING MODULES (COMPARISON, BENTO, PIPELINE, LAUNCHER) */
 .landing-section {
   padding: 56px 20px;
+}
+
+.landing-start-section {
+  padding-top: 38px;
+  padding-bottom: 88px;
+}
+
+.landing-start-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.landing-start-card {
+  position: relative;
+  display: flex;
+  min-height: 196px;
+  padding: 24px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(31, 73, 64, 0.12);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.1), transparent 52%),
+    rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 30px rgba(28, 58, 51, 0.055);
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    box-shadow 240ms ease,
+    border-color 200ms ease;
+}
+
+.landing-start-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(15, 118, 110, 0.26);
+  box-shadow: 0 20px 38px rgba(28, 58, 51, 0.11);
+}
+
+.landing-start-card > .icon-md {
+  color: var(--accent-primary);
+}
+
+.landing-start-card h3 {
+  color: #183a35;
+  font-size: 1rem;
+}
+
+.landing-start-card p {
+  max-width: 290px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.landing-start-number {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  color: rgba(15, 118, 110, 0.3);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.74rem;
+}
+
+.landing-start-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
 }
 
 .answer-journey-section {
@@ -1032,91 +1105,6 @@ body[data-shell-mode="workspace"] #landingShell {
   font-size: 0.98rem;
 }
 
-.comparison-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-}
-
-.comp-card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.bad-card {
-  border-color: rgba(244, 63, 94, 0.28);
-}
-
-.good-card {
-  border-color: rgba(16, 185, 129, 0.35);
-  background:
-    radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 55%),
-    var(--bg-surface);
-}
-
-.comp-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.comp-prompt {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.78rem;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.35);
-  color: var(--text-secondary);
-}
-
-.comp-output {
-  margin: 0;
-  padding: 14px;
-  border-radius: var(--radius-lg);
-  background: rgba(6, 8, 14, 0.75);
-  border: 1px solid var(--border-subtle);
-  font-size: 0.85rem;
-  min-height: 165px;
-}
-
-.bad-output {
-  font-family: "JetBrains Mono", monospace;
-  color: #a9324c;
-  white-space: pre-wrap;
-}
-
-.good-output ul {
-  margin: 8px 0;
-  padding-left: 18px;
-}
-
-.muted-line {
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  margin-top: 6px;
-}
-
-.comp-sources-strip {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.comp-notes {
-  margin: 0;
-  padding-left: 18px;
-  color: var(--text-secondary);
-  font-size: 0.82rem;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 /* PRODUCT BENTO GRID */
 .product-bento-grid {
   display: grid;
@@ -1202,74 +1190,6 @@ body[data-shell-mode="workspace"] #landingShell {
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid var(--border-subtle);
   color: #6ee7b7;
-}
-
-/* PIPELINE STEPS & MODULE LAUNCHER */
-.pipeline-steps-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.pipe-step-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.step-num {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--accent-primary);
-  background: rgba(99, 102, 241, 0.14);
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-}
-
-.pipe-step-card h4 {
-  font-size: 1rem;
-}
-
-.pipe-step-card p {
-  color: var(--text-secondary);
-  font-size: 0.84rem;
-  flex: 1;
-}
-
-.module-launcher-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.module-launch-card {
-  text-align: left;
-  font-family: inherit;
-  color: var(--text-primary);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: all 0.18s ease;
-}
-
-.module-launch-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--border-highlight);
-  background: var(--bg-surface-hover);
-}
-
-.module-launch-card strong {
-  font-size: 0.98rem;
-}
-
-.module-launch-card span {
-  color: var(--text-secondary);
-  font-size: 0.82rem;
 }
 
 .landing-footer {
@@ -3113,8 +3033,6 @@ body[data-shell-mode="workspace"] #landingShell {
 }
 
 .showcase-window,
-.comp-prompt,
-.comp-output,
 .code-mini-pill,
 .vault-path-display,
 .cmd-search-trigger,
@@ -3134,6 +3052,11 @@ body[data-shell-mode="workspace"] #landingShell {
 }
 
 .showcase-window {
+  background-image: radial-gradient(
+    500px circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    rgba(20, 184, 166, 0.11),
+    transparent 72%
+  );
   box-shadow: 0 28px 80px rgba(30, 62, 55, 0.16);
 }
 
@@ -3171,18 +3094,8 @@ body[data-shell-mode="workspace"] #landingShell {
   color: #155e58;
 }
 
-.comp-prompt,
-.comp-output,
 .code-mini-pill {
   background: #f5f8f7;
-}
-
-.comp-prompt {
-  color: #526664;
-}
-
-.good-output {
-  color: #203b37;
 }
 
 .code-mini-pill {
@@ -3302,7 +3215,6 @@ body[data-shell-mode="workspace"] #landingShell {
 
 .kpi-card:hover,
 .surface-card,
-.module-launch-card,
 .demo-source-card,
 .file-item,
 .source-card,
@@ -3890,10 +3802,11 @@ select:focus-visible {
   .window-status { display: none; }
 
   .landing-section { padding: 42px 16px; }
+  .landing-start-section { padding-bottom: 56px; }
+  .landing-start-grid { grid-template-columns: minmax(0, 1fr); }
+  .landing-start-card { min-height: 0; }
+  .landing-start-actions { align-items: stretch; flex-direction: column; }
 
-  .comparison-grid,
-  .pipeline-steps-grid,
-  .module-launcher-grid,
   .overview-hero-grid,
   .overview-bento,
   .studio-grid,
@@ -4101,9 +4014,6 @@ select:focus-visible {
   }
 
   .showcase-body,
-  .comparison-grid,
-  .pipeline-steps-grid,
-  .module-launcher-grid,
   .overview-hero-grid,
   .overview-bento,
   .studio-grid,
