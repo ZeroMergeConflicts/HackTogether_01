@@ -355,36 +355,69 @@ function initializeLandingMotion() {
 
   if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
-  const showcase = document.querySelector(".hero-showcase-frame");
-  if (!showcase) return;
-
+  const landing = document.querySelector(".landing-shell");
+  const showcase = landing?.querySelector(".hero-showcase-frame");
+  if (!landing) return;
   let frameRequest = 0;
-  showcase.addEventListener("pointermove", (event) => {
+  landing.addEventListener("pointermove", (event) => {
     if (frameRequest) cancelAnimationFrame(frameRequest);
     frameRequest = requestAnimationFrame(() => {
-      const bounds = showcase.getBoundingClientRect();
-      const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
-      const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
-      showcase.style.setProperty("--tilt-x", `${(-vertical * 3).toFixed(2)}deg`);
-      showcase.style.setProperty("--tilt-y", `${(horizontal * 3).toFixed(2)}deg`);
-      showcase.style.setProperty(
-        "--pointer-x",
-        `${((event.clientX - bounds.left) / bounds.width) * 100}%`,
+      landing.style.setProperty("--cursor-x", `${event.clientX}px`);
+      landing.style.setProperty("--cursor-y", `${event.clientY}px`);
+
+      const target = event.target.closest(
+        ".hero-showcase-frame, .bento-feature, .landing-start-card, .journey-visual",
       );
-      showcase.style.setProperty(
-        "--pointer-y",
-        `${((event.clientY - bounds.top) / bounds.height) * 100}%`,
-      );
+      if (target && landing.contains(target)) {
+        const bounds = target.getBoundingClientRect();
+        target.style.setProperty(
+          "--pointer-x",
+          `${(((event.clientX - bounds.left) / bounds.width) * 100).toFixed(1)}%`,
+        );
+        target.style.setProperty(
+          "--pointer-y",
+          `${(((event.clientY - bounds.top) / bounds.height) * 100).toFixed(1)}%`,
+        );
+        if (target === showcase) {
+          const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
+          const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
+          target.style.setProperty("--tilt-x", `${(-vertical * 4).toFixed(2)}deg`);
+          target.style.setProperty("--tilt-y", `${(horizontal * 4).toFixed(2)}deg`);
+        }
+      }
+      if (showcase && target !== showcase) {
+        showcase.style.setProperty("--tilt-x", "0deg");
+        showcase.style.setProperty("--tilt-y", "0deg");
+      }
       frameRequest = 0;
     });
   });
-  showcase.addEventListener("pointerleave", () => {
+  landing.addEventListener("pointerout", (event) => {
+    const target = event.target.closest(
+      ".hero-showcase-frame, .bento-feature, .landing-start-card, .journey-visual",
+    );
+    if (
+      !target ||
+      (event.relatedTarget instanceof Node && target.contains(event.relatedTarget))
+    ) {
+      return;
+    }
+    target.style.setProperty("--pointer-x", "50%");
+    target.style.setProperty("--pointer-y", "50%");
+    if (target === showcase) {
+      target.style.setProperty("--tilt-x", "0deg");
+      target.style.setProperty("--tilt-y", "0deg");
+    }
+  });
+  landing.addEventListener("pointerleave", () => {
     if (frameRequest) cancelAnimationFrame(frameRequest);
     frameRequest = 0;
-    showcase.style.setProperty("--tilt-x", "0deg");
-    showcase.style.setProperty("--tilt-y", "0deg");
-    showcase.style.setProperty("--pointer-x", "50%");
-    showcase.style.setProperty("--pointer-y", "50%");
+    landing.style.setProperty("--cursor-x", "-1000px");
+    landing.style.setProperty("--cursor-y", "-1000px");
+    if (showcase) {
+      showcase.style.setProperty("--tilt-x", "0deg");
+      showcase.style.setProperty("--tilt-y", "0deg");
+    }
   });
 }
 
