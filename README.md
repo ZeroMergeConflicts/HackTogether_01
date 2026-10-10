@@ -12,6 +12,7 @@ The app includes a browser-based dashboard, AI question answering, an action and
 - Supports Gemini-powered multimodal analysis when an API key is configured.
 - Runs with a local fallback when Gemini is not configured; fallback analysis and answers are more limited.
 - Accepts multiple files from the Upload Files page via file picker or drag and drop, then stores and indexes them in the server's `.uploads/` folder without a per-file size limit.
+- Lets users reversibly ignore or restore indexed files; ignored files remain on disk but are excluded from scans, answers, and graph relationships.
 - Stores file metadata and extracted context in SQLite.
 
 ## Requirements
@@ -72,6 +73,7 @@ The database is created automatically on startup. The generated `contextvault.db
 4. Select **Scan Folder**. Scans are recursive; new and modified files are analyzed, while unchanged files are skipped by hash.
 5. Use the dashboard or workspace navigation to review extracted context, tasks, deadlines, links, and files.
 6. Ask a question in Instant Synthesis or AI Studio. Personal answers include source files when supporting evidence is available.
+7. In **Vault Files**, select **Ignore** on a file to exclude it from future scans and answers without deleting the original. Choose **Ignored files** to restore it. In the knowledge graph, right-click a file node for the same action.
 
 Sample related documents are included in `sample_data/tech_symposium/`. To try them, enter `sample_data/tech_symposium` in the folder path and select **Scan Folder**, or upload the three text files from the **Upload Files** page. Example questions include:
 
@@ -83,6 +85,12 @@ Sample related documents are included in `sample_data/tech_symposium/`. To try t
 The scanner supports `.txt`, `.md`, `.csv`, `.json`, `.html`, `.htm`, `.pdf`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.webp`, and `.svg` files. PDF and image understanding requires Gemini configuration. Without Gemini, text files use a limited local extractor; binary files cannot be meaningfully analyzed by that fallback.
 
 Scanning does not automatically remove database records for files that have since been deleted from disk. Existing file metadata and extracted context remain in SQLite.
+
+## GitHub Pages
+
+The **Deploy ContextVault to GitHub Pages** workflow publishes the same landing page and workspace interface used by the local app, with a pre-populated Tech Symposium workspace. Its example files and answers are provided in the browser; folder scanning, uploads, and AI-powered answers require the FastAPI backend and are available when running the app locally.
+
+To enable hosting, merge the workflow to `main`, then in repository **Settings → Pages**, choose **GitHub Actions** as the build and deployment source. Subsequent pushes to `main` deploy the website.
 
 ## API Overview
 
@@ -96,6 +104,7 @@ All routes use the local FastAPI server. Request and response schemas are also b
 | `POST` | `/api/upload` | Accepts multiple `files` multipart form fields, stores files in `.uploads/`, and indexes that folder. |
 | `GET` | `/api/scan/status` | Returns the most recently recorded scan status. |
 | `GET` | `/api/files` | Lists indexed files. |
+| `PATCH` | `/api/files/{file_id}/ignore` | Reversibly excludes or restores a file. Body: `{"ignored": true}` or `{"ignored": false}`. |
 | `GET` | `/api/files/{file_id}` | Returns a file and its extracted context. |
 | `GET` | `/api/files/{file_id}/preview` | Returns preview metadata, context, and related files. |
 | `GET` | `/api/files/{file_id}/raw` | Serves the original file if it still exists at its recorded path. |
