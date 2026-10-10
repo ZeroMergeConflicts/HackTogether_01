@@ -86,11 +86,11 @@ The scanner supports `.txt`, `.md`, `.csv`, `.json`, `.html`, `.htm`, `.pdf`, `.
 
 Scanning does not automatically remove database records for files that have since been deleted from disk. Existing file metadata and extracted context remain in SQLite.
 
-## GitHub Pages Demo
+## GitHub Pages
 
-The **Deploy static landing page to GitHub Pages** workflow publishes a static product/demo page from `main` and can also be started manually from the Actions tab. It intentionally does not publish the workspace, file uploads, folder scanning, or AI API: those features require the FastAPI backend and remain available when running the app locally.
+The **Deploy ContextVault to GitHub Pages** workflow publishes the same landing page and workspace interface used by the local app, with a pre-populated Tech Symposium workspace. Its example files and answers are provided in the browser; folder scanning, uploads, and AI-powered answers require the FastAPI backend and are available when running the app locally.
 
-To enable hosting, merge the workflow to `main`, then in repository **Settings → Pages**, choose **GitHub Actions** as the build and deployment source. Subsequent pushes to `main` deploy the static demo.
+To enable hosting, merge the workflow to `main`, then in repository **Settings → Pages**, choose **GitHub Actions** as the build and deployment source. Subsequent pushes to `main` deploy the website.
 
 ## API Overview
 

@@ -1,4 +1,4 @@
-name: Deploy static landing page to GitHub Pages
+name: Deploy ContextVault to GitHub Pages
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Build static landing demo
+      - name: Build static website
         run: python scripts/build_pages.py
 
       - name: Upload Pages artifact
