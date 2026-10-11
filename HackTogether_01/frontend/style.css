@@ -2796,6 +2796,11 @@ body[data-shell-mode="workspace"] #landingShell {
   margin: 0;
 }
 
+.preview-box .json-code-block,
+.insp-pane-json .json-code-block {
+  color: #e5e7eb;
+}
+
 .preview-image {
   max-width: 100%;
   border-radius: var(--radius-md);
