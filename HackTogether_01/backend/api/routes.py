@@ -253,7 +253,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
                     text_content = file_path.read_text(
                         encoding="utf-8",
                         errors="replace",
-                    )[:15000]
+                    )
                 except Exception as exc:
                     text_content = f"Unable to read file content: {exc}"
         elif ext in {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg"}:

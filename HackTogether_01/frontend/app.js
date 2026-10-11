@@ -1340,6 +1340,10 @@ async function openFileInspector(fileId, filename) {
     previewBox.innerHTML = `<img class="preview-image" src="${API_BASE}${data.raw_url}" alt="${escapeHtml(file.name)}" />`;
   } else if (data.preview_type === "pdf" && data.raw_url) {
     previewBox.innerHTML = `<iframe class="preview-pdf" src="${API_BASE}${data.raw_url}"></iframe>`;
+  } else if (data.preview_type === "text" && data.exists_on_disk) {
+    previewBox.innerHTML = `<pre class="json-code-block">${escapeHtml(data.text_content ?? "")}</pre>`;
+  } else if (data.preview_type === "text") {
+    previewBox.innerHTML = `<div class="empty-state">${escapeHtml(ctx.summary || `${file.name} is no longer available at its recorded path.`)}</div>`;
   } else if (data.text_content) {
     previewBox.innerHTML = `<pre class="json-code-block">${escapeHtml(data.text_content)}</pre>`;
   } else {

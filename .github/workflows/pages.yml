@@ -1,9 +1,6 @@
 name: Deploy ContextVault to GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
