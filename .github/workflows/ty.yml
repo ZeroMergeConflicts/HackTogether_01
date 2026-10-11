@@ -41,7 +41,7 @@ jobs:
     steps:
       # Fetch the repository so ty can inspect the source tree.
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
 
       # Install uv for managing the project's development environment.
       - name: Set up uv
