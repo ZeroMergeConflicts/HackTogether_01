@@ -1312,13 +1312,10 @@ async function openFileInspector(fileId, filename) {
   document.getElementById("inspectorFilename").textContent = file.name;
   const ignoreButton = document.getElementById("inspectorIgnoreBtn");
   ignoreButton.dataset.fileId = String(file.id);
-  ignoreButton.querySelector("span").textContent = file.ignored
-    ? "Restore"
-    : "Ignore";
-  ignoreButton.querySelector("i").setAttribute(
-    "data-lucide",
-    file.ignored ? "eye" : "eye-off",
-  );
+  ignoreButton.innerHTML = `
+    <i data-lucide="${file.ignored ? "eye" : "eye-off"}" class="icon-xs"></i>
+    <span>${file.ignored ? "Restore" : "Ignore"}</span>
+  `;
 
   const rawLink = document.getElementById("inspectorRawLink");
   if (data.raw_url) {
